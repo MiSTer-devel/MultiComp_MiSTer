@@ -174,7 +174,7 @@ wire [1:0] r,g,b;
 wire driveLED;
 //wire [2:0] cpu_rom_type = status[9:7];
 
- MicrocomputerZ80CPM
+MicrocomputerZ80CPM MicrocomputerZ80CPM
 (
 	.N_RESET(~reset),
 	.clk(CLK_50M),
