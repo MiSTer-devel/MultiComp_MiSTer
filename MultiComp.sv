@@ -110,6 +110,8 @@ assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DD
 
 assign LED_USER  = 0;
 assign LED_DISK  = ~driveLED;
+
+
 assign LED_POWER = 0;
 
 assign VIDEO_ARX = 4;
@@ -119,10 +121,10 @@ assign VIDEO_ARY = 3;
 `include "build_id.v"
 localparam CONF_STR = {
 	"MultiComp;;",
-	//"-;",
-	//"O79,CPU/ROM,Z80-CP/M,Z80-Basic,6502-Basic,6809-Basic;",
 	"-;",
-	"V,v1.0.",`BUILD_DATE
+	"O78,CPU-ROM,Z80-CP/M,6502-Basic,6809-Basic;",
+	"-;",
+	"V,v1.1.",`BUILD_DATE
 };
 
 
@@ -168,33 +170,103 @@ wire reset = RESET | status[0] | buttons[1];
 
 assign CLK_VIDEO = CLK_50M;
 
+typedef enum {cpuZ80CPM='b00, cpu6502Basic='b01, cpu6809Basic='b10} cpu_type_enum;
+wire [1:0] cpu_type = status[8:7];
+
 wire hblank, vblank;
 wire hs, vs;
 wire [1:0] r,g,b;
 wire driveLED;
-//wire [2:0] cpu_rom_type = status[9:7];
+
+wire [2:0] _hblank, _vblank;
+wire [2:0] _hs, _vs;
+wire [1:0] _r[2:0], _g[2:0], _b[2:0];
+wire [2:0] _CE_PIXEL;
+wire [2:0] _SD_CS;
+wire [2:0] _SD_MOSI;
+wire [2:0] _SD_SCK;
+wire [2:0] _driveLED;
+
+always_comb 
+begin
+	hblank 		<= _hblank[cpu_type];
+	vblank 		<= _vblank[cpu_type];
+	hs 		 	<= _hs[cpu_type];
+	vs				<= _vs[cpu_type];
+	r 				<= _r[cpu_type][1:0];
+	g 				<= _g[cpu_type][1:0];
+	b				<= _b[cpu_type][1:0];
+	CE_PIXEL		<= _CE_PIXEL[cpu_type];
+	SD_CS			<= _SD_CS[cpu_type];
+	SD_MOSI		<= _SD_MOSI[cpu_type];
+	SD_SCK		<= _SD_SCK[cpu_type];
+	driveLED 	<= _driveLED[cpu_type];
+end
 
 MicrocomputerZ80CPM MicrocomputerZ80CPM
 (
-	.N_RESET(~reset),
-	.clk(CLK_50M),
-	.R(r),
-	.G(g),
-	.B(b),
-	.HS(hs),
-	.VS(vs),
-	.hBlank(hblank),
-	.vBlank(vblank),
-	.cepix(CE_PIXEL),
+	.N_RESET(~reset & cpu_type == cpuZ80CPM),
+	.clk(cpu_type == cpuZ80CPM ? CLK_50M : 0),
+	.R(_r[0][1:0]),
+	.G(_g[0][1:0]),
+	.B(_b[0][1:0]),
+	.HS(_hs[0]),
+	.VS(_vs[0]),
+	.hBlank(_hblank[0]),
+	.vBlank(_vblank[0]),
+	.cepix(_CE_PIXEL[0]),
 	.ps2Clk(PS2_CLK),
 	.ps2Data(PS2_DAT),
-	.sdCS(SD_CS),
-	.sdMOSI(SD_MOSI),
+	.sdCS(_SD_CS[0]),
+	.sdMOSI(_SD_MOSI[0]),
 	.sdMISO(SD_MISO),
-	.sdSCLK(SD_SCK),
-	.driveLED(driveLED)
+	.sdSCLK(_SD_SCK[0]),
+	.driveLED(_driveLED[0])
 );
- 
+
+Microcomputer6502Basic Microcomputer6502Basic
+(
+	.N_RESET(~reset & cpu_type == cpu6502Basic),
+	.clk(cpu_type == cpu6502Basic ? CLK_50M : 0),
+	.R(_r[1][1:0]),
+	.G(_g[1][1:0]),
+	.B(_b[1][1:0]),
+	.HS(_hs[1]),
+	.VS(_vs[1]),
+	.hBlank(_hblank[1]),
+	.vBlank(_vblank[1]),
+	.cepix(_CE_PIXEL[1]),
+	.ps2Clk(PS2_CLK),
+	.ps2Data(PS2_DAT),
+	.sdCS(_SD_CS[1]),
+	.sdMOSI(_SD_MOSI[1]),
+	.sdMISO(SD_MISO),
+	.sdSCLK(_SD_SCK[1]),
+	.driveLED(_driveLED[1])
+);
+
+//Reset is not working (even on the original Grant's 6809)
+Microcomputer6809Basic Microcomputer6809Basic
+(
+	.N_RESET(~reset & cpu_type == cpu6809Basic),
+	.clk(cpu_type == cpu6809Basic ? CLK_50M : 0),
+	.R(_r[2][1:0]),
+	.G(_g[2][1:0]),
+	.B(_b[2][1:0]),
+	.HS(_hs[2]),
+	.VS(_vs[2]),
+	.hBlank(_hblank[2]),
+	.vBlank(_vblank[2]),
+	.cepix(_CE_PIXEL[2]),
+	.ps2Clk(PS2_CLK),
+	.ps2Data(PS2_DAT),
+	.sdCS(_SD_CS[2]),
+	.sdMOSI(_SD_MOSI[2]),
+	.sdMISO(SD_MISO),
+	.sdSCLK(_SD_SCK[2]),
+	.driveLED(_driveLED[2])
+);
+
 video_cleaner video_cleaner
 (
 	.clk_vid(CLK_VIDEO),
