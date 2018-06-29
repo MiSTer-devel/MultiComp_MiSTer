@@ -2,7 +2,7 @@ MISTer MultiComp
 ================
 
 Port of Grant Searle's MultiComp to the MiSTer. 
-The MiSTer OSD while allow the access to three machines:
+The MiSTer OSD allows the access to three machines:
 
 ## Z80 CP/M - SD card needed in I/O Board: 
 For convenience you can use the Multicomp FPGA - CP/M Demo Disk from Obsolescence Guaranteed:
