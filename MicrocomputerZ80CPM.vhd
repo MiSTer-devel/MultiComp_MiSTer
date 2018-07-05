@@ -110,8 +110,8 @@ architecture struct of MicrocomputerZ80CPM is
 begin
 	--CPM
 	-- Disable ROM if out 38. Re-enable when (asynchronous) reset pressed
-	process (n_ioWR, n_reset) begin
-		if (n_reset = '0') then
+	process (n_ioWR, N_RESET) begin
+		if (N_RESET = '0') then
 			n_RomActive <= '0';
 		elsif (rising_edge(n_ioWR)) then
 			if cpuAddress(7 downto 0) = "00111000" then -- $38
