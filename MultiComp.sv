@@ -107,7 +107,7 @@ module emu
 	//ADC
 	inout   [3:0] ADC_BUS,
 
-	//SD-SPI
+	//SD-SPI SECONDARY SDCARD
 	output        SD_SCK,
 	output        SD_MOSI,
 	input         SD_MISO,
@@ -160,12 +160,14 @@ module emu
 
 assign ADC_BUS  = 'Z;
 assign USER_OUT = '1;
-assign {UART_RTS, UART_TXD, UART_DTR} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 
-assign LED_USER  = 0;
+assign UART_RTS = UART_CTS;
+assign UART_DTR = UART_DSR;
+
+assign LED_USER  = vsd_sel & sd_act;
 assign LED_DISK  = ~driveLED;
 assign LED_POWER = 0;
 assign BUTTONS = 0;
@@ -232,13 +234,25 @@ hps_io #(
 	.ps2_kbd_clk_out(PS2_CLK),
 	.ps2_kbd_data_out(PS2_DAT),
 
+	.sd_lba(sd_lba),
+	.sd_rd(sd_rd),
+	.sd_wr(sd_wr),
+	.sd_ack(sd_ack),
+	.sd_ack_conf(sd_ack_conf),
+	.sd_buff_addr(sd_buff_addr),
+	.sd_buff_dout(sd_buff_dout),
+	.sd_buff_din(sd_buff_din),
+	.sd_buff_wr(sd_buff_wr),
+
 	.img_mounted(img_mounted),
 	.img_readonly(img_readonly),
-	.img_size(img_size)
+	.img_size(img_size),
+
+	.uart_mode(16'b000_11111_000_11111)
 );
 
 ///////////////////////   CLOCKS   ///////////////////////////////
-wire clk_sys, clk_ram, locked;
+wire clk_sys, locked;
 
 pll pll
 (
@@ -251,6 +265,52 @@ pll pll
 /////////////////  RESET  /////////////////////////
 
 wire reset = RESET | status[0] | buttons[1] | status[10] | (status[14] && img_mounted);
+
+/////////////////  SDCARD  ////////////////////////
+
+wire sdclk;
+wire sdmosi;
+wire sdmiso = vsd_sel ? vsdmiso : SD_MISO;
+wire sdss;
+
+wire vsdmiso;
+reg vsd_sel = 0;
+
+always @(posedge clk_sys) if(img_mounted) vsd_sel <= |img_size;
+
+sd_card sd_card
+(
+	.*,
+
+	.clk_spi(clk_sys),
+	.sdhc(1),
+	.sck(sdclk),
+	.ss(sdss | ~vsd_sel),
+	.mosi(sdmosi),
+	.miso(vsdmiso)
+);
+
+assign SD_CS   = sdss   |  vsd_sel;
+assign SD_SCK  = sdclk  & ~vsd_sel;
+assign SD_MOSI = sdmosi & ~vsd_sel;
+
+reg sd_act;
+
+always @(posedge clk_sys) begin
+	reg old_mosi, old_miso;
+	integer timeout = 0;
+
+	old_mosi <= sdmosi;
+	old_miso <= sdmiso;
+
+	sd_act <= 0;
+	if(timeout < 1000000) begin
+		timeout <= timeout + 1;
+		sd_act <= 1;
+	end
+
+	if((old_mosi ^ sdmosi) || (old_miso ^ sdmiso)) timeout <= 0;
+end
 
 ///////////////////////////////////////////////////
 
@@ -267,11 +327,12 @@ wire driveLED;
 wire [3:0] _hblank, _vblank;
 wire [3:0] _hs, _vs;
 wire [1:0] _r[3:0], _g[3:0], _b[3:0];
+wire [3:0] _driveLED;
 wire [3:0] _CE_PIXEL;
 wire [3:0] _SD_CS;
 wire [3:0] _SD_MOSI;
 wire [3:0] _SD_SCK;
-wire [3:0] _driveLED;
+wire [3:0] _txd[3:0];
 
 always_comb 
 begin
@@ -283,10 +344,11 @@ begin
 	g 			<= _g[cpu_type][1:0];
 	b			<= _b[cpu_type][1:0];
 	CE_PIXEL	<= _CE_PIXEL[cpu_type];
-	SD_CS		<= _SD_CS[cpu_type];
-	SD_MOSI		<= _SD_MOSI[cpu_type];
-	SD_SCK		<= _SD_SCK[cpu_type];
+	sdss		<= _SD_CS[cpu_type];
+	sdmosi		<= _SD_MOSI[cpu_type];
+	sdclk		<= _SD_SCK[cpu_type];
 	driveLED 	<= _driveLED[cpu_type];
+	UART_TXD	<= _txd[cpu_type];
 end
 
 MicrocomputerZ80CPM MicrocomputerZ80CPM
@@ -305,9 +367,11 @@ MicrocomputerZ80CPM MicrocomputerZ80CPM
 	.ps2Data(PS2_DAT),
 	.sdCS(_SD_CS[0]),
 	.sdMOSI(_SD_MOSI[0]),
-	.sdMISO(SD_MISO),
+	.sdMISO(sdmiso),
 	.sdSCLK(_SD_SCK[0]),
-	.driveLED(_driveLED[0])
+	.driveLED(_driveLED[0]),
+	.rxd1 (UART_RXD),
+	.txd1 (_txd[0])
 );
 
 MicrocomputerZ80Basic MicrocomputerZ80Basic
@@ -326,9 +390,11 @@ MicrocomputerZ80Basic MicrocomputerZ80Basic
 	.ps2Data(PS2_DAT),
 	.sdCS(_SD_CS[1]),
 	.sdMOSI(_SD_MOSI[1]),
-	.sdMISO(SD_MISO),
+	.sdMISO(sdmiso),
 	.sdSCLK(_SD_SCK[1]),
-	.driveLED(_driveLED[1])
+	.driveLED(_driveLED[1]),
+	.rxd1 (UART_RXD),
+	.txd1 (_txd[1])
 );
 
 Microcomputer6502Basic Microcomputer6502Basic
@@ -347,9 +413,11 @@ Microcomputer6502Basic Microcomputer6502Basic
 	.ps2Data(PS2_DAT),
 	.sdCS(_SD_CS[2]),
 	.sdMOSI(_SD_MOSI[2]),
-	.sdMISO(SD_MISO),
+	.sdMISO(sdmiso),
 	.sdSCLK(_SD_SCK[2]),
-	.driveLED(_driveLED[2])
+	.driveLED(_driveLED[2]),
+	.rxd1 (UART_RXD),
+	.txd1 (_txd[2])
 );
 
 //Reset is not working (even on the original Grant's 6809)
@@ -369,9 +437,11 @@ Microcomputer6809Basic Microcomputer6809Basic
 	.ps2Data(PS2_DAT),
 	.sdCS(_SD_CS[3]),
 	.sdMOSI(_SD_MOSI[3]),
-	.sdMISO(SD_MISO),
+	.sdMISO(sdmiso),
 	.sdSCLK(_SD_SCK[3]),
-	.driveLED(_driveLED[3])
+	.driveLED(_driveLED[3]),
+	.rxd1 (UART_RXD),
+	.txd1 (_txd[3])
 );
 
 video_cleaner video_cleaner

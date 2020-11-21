@@ -185,9 +185,9 @@ port map (
 io2 : entity work.bufferedUART
 port map(
 	clk => clk,
-	n_wr => n_interface1CS or cpuClock or n_WR,
-	n_rd => n_interface1CS or cpuClock or (not n_WR),
-	n_int => n_int1,
+	n_wr => n_interface2CS or cpuClock or n_WR,
+	n_rd => n_interface2CS or cpuClock or (not n_WR),
+	n_int => n_int2,
 	regSel => cpuAddress(0),
 	dataIn => cpuDataOut,
 	dataOut => interface2DataOut,
