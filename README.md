@@ -2,9 +2,15 @@ MISTer MultiComp
 ================
 
 Port of Grant Searle's MultiComp to the MiSTer. 
-The MiSTer OSD allows the access to three machines:
 
-## Z80 CP/M - SD card needed in I/O Board: 
+Updated by S0urceror to use MiSTer image files, use all 4 machine types and have the MiSTer 
+UART connected to serial interface 2 of the core. The latter allows to use the core remotely.
+
+The MiSTer OSD allows the access to four machines:
+
+## Z80 CP/M: 
+You can now use both an external SDCard and/or select the image file within MiSTer. Whatever you like.
+
 For convenience you can use the Multicomp FPGA - CP/M Demo Disk from Obsolescence Guaranteed:
 http://obsolescence.wixsite.com/obsolescence/multicomp-fpga-cpm-demo-disk
 
@@ -13,6 +19,19 @@ https://github.com/MiSTer-devel/Main_MiSTer/wiki/IO-Board
 
 Using CP/M - from Grant Searle website:
 http://searle.hostei.com/grant/Multicomp/cpm/fpgaCPM.html#UsingTheMachine
+
+## Z80 Basic:
+SGN, INT, ABS ,USR, FRE, INP, POS, SQR, RND ,LOG, EXP, COS, SIN, TAN, ATN, PEEK ,DEEK ,LEN, STR$, VAL ,ASC, CHR$ ,LEFT$, 
+RIGHT$, MID$, END, FOR, NEXT, DATA, INPUT, DIM, READ, LET, GOTO, RUN, IF, RESTORE, GOSUB, RETURN, REM, STOP, OUT, ON, 
+NULL, WAIT,  DEF, POKE, DOKE, LINES, CLS, WIDTH, MONITOR, PRINT, CONT, LIST, CLEAR, NEW, TAB, TO, FN, SPC, THEN, NOT, 
+STEP, +, -, *, /, ^, AND, OR, >, <, = 
+
+PLUS my additional implementations here (making it version 4.7b):
+
+HEX$(nn) - convert a SIGNED integer (-32768 to +32767) to a string containing the hex value
+BIN$(nn) - convert a SIGNED integer (-32768 to +32767) to a string containing the binary value
+&Hnn - interpret the value after the &H as a HEX value (signed 16 bit)
+&Bnn - interpret the value after the &B as a BINARY value (signed 16 bit)
 
 ## 6502 Basic - No SD card support (No CSAVE/CLOAD):
 END, FOR, NEXT, DATA, INPUT, DIM, READ, LET, GOTO, RUN, IF, RESTORE, GOSUB, RETURN, REM, STOP, ON, NULL, WAIT, DEF, POKE, PRINT,
