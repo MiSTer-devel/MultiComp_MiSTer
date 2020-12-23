@@ -155,7 +155,7 @@
 0153   50C1             		; with MISTer virtual SD interface sys/sd_card.sv
 0154   50C1             		; which results in hangs or write errors.
 0155   50C1 C5          		push bc
-0156   50C2 06 64       		ld b,100
+0156   50C2 06 32       		ld b,50
 0157   50C4             _again:
 0158   50C4 10 FE       		djnz _again	
 0159   50C6 C1          		pop bc

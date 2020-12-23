@@ -112,7 +112,7 @@
 0110   50A6             		; with MISTer virtual SD interface sys/sd_card.sv
 0111   50A6             		; which results in hangs or write errors.
 0112   50A6 C5          		push bc
-0113   50A7 06 64       		ld b,100
+0113   50A7 06 32       		ld b,50
 0114   50A9             _again:
 0115   50A9 10 FE       		djnz _again	
 0116   50AB C1          		pop bc

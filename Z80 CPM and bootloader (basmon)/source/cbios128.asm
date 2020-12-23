@@ -784,7 +784,7 @@ wrWait2: IN	A,(SD_STATUS)
 		; with MISTer virtual SD interface sys/sd_card.sv
 		; which results in hangs or write errors.
 		push bc
-		ld b,100
+		ld b,50
 _again:
 		djnz _again	
 		pop bc

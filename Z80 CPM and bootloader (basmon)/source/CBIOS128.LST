@@ -803,7 +803,7 @@
 0784   EAE1             		; with MISTer virtual SD interface sys/sd_card.sv
 0785   EAE1             		; which results in hangs or write errors.
 0786   EAE1 C5          		push bc
-0787   EAE2 06 64       		ld b,100
+0787   EAE2 06 32       		ld b,50
 0788   EAE4             _again:
 0789   EAE4 10 FE       		djnz _again	
 0790   EAE6 C1          		pop bc
