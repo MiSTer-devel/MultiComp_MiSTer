@@ -114,6 +114,22 @@ signal address: std_logic_vector(31 downto 0) :=x"00000000";
 
 signal led_on_count : integer range 0 to 200;
 
+	-- reg 000 - read/write data
+	
+	-- reg 001 - read status
+	--		     bit 7 = block written
+	--           bit 6 = block read
+	--           bit 5 = block busy
+	--           bit 4 = init busy
+
+	-- reg 001 - write control
+	--           0 - block_read
+	--           1 - block_write
+
+	-- reg 002 - LBA0
+	-- reg 003 - LBA1
+	-- reg 004 - LBA2
+
 begin
 	process(n_wr)
 	begin
@@ -142,8 +158,8 @@ begin
 
 	dataOut <=
 		dout when regAddr = "000"
-	else status when regAddr = "001"
-	else "00000000";
+		else status when regAddr = "001"
+		else "00000000";
 
 	process(n_wr)
 	begin
@@ -444,7 +460,7 @@ begin
 						bit_counter := 7;
 						state <= write_block_byte;
 						byte_counter := byte_counter - 1;
-						sd_write_flag <= not sd_write_flag;
+						sd_write_flag <= not sd_write_flag; -- now sd_write_flag = host_write_flag
 					end if;
 				end if;
 

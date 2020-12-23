@@ -1,0 +1,88 @@
+0001   0000             LF	.EQU	0AH		;line feed
+0002   0000             FF	.EQU	0CH		;form feed
+0003   0000             CR	.EQU	0DH		;carriage RETurn
+0004   0000             DOT .EQU     '.'
+0005   0000             CH375_CMD_CHECK_EXIST .EQU 06H
+0006   0000             CH375_CMD_RESET_ALL .EQU 05H
+0007   0000             
+0008   4000                 .ORG 4000H
+0009   4000             
+0010   4000 CD 64 40        CALL	printInline
+0011   4003 436865636B20    .TEXT "Check CH376s communication"
+0011   4009 43483337367320636F6D6D756E69636174696F6E
+0012   401D 0D 0A 00        .DB CR,LF,0
+0013   4020             
+0014   4020 CD 64 40        CALL	printInline
+0015   4023 53656E642041    .TEXT "Send A"
+0016   4029 0D 0A 00        .DB CR,LF,0
+0017   402C             
+0018   402C 3E 05           ld a, CH375_CMD_RESET_ALL
+0019   402E D3 20           out (20h),a
+0020   4030             
+0021   4030 3E 06           ld a, CH375_CMD_CHECK_EXIST
+0022   4032 D3 20           out (20h),a
+0023   4034 3E 41           ld a, 'A'
+0024   4036 D3 20           out (20h),a
+0025   4038                 ; receive result
+0026   4038 AF              xor a
+0027   4039 D3 20           out (20h),a
+0028   403B DB 20           in a, (20h)
+0029   403D EE FF           xor 255
+0030   403F             
+0031   403F CD 64 40        CALL	printInline
+0032   4042 526563656976    .TEXT "Received "
+0032   4048 656420
+0033   404B 00              .DB 0
+0034   404C             
+0035   404C CF              RST 08H ; print contents of A
+0036   404D             
+0037   404D CD 64 40        CALL	printInline
+0038   4050 0D 0A 00        .DB CR,LF,0
+0039   4053             
+0040   4053 C9              ret
+0041   4054             
+0042   4054                 ; LOOPBACK TEST
+0043   4054             
+0044   4054 06 39           ld b, 39h
+0045   4056             outer:
+0046   4056 78              ld a, b
+0047   4057 FE 2F           cp 2fh
+0048   4059 C8              ret z
+0049   405A                 ; send out
+0050   405A D3 20           out (20h),a
+0051   405C             ;inner:
+0052   405C             ;    ld a, DOT
+0053   405C             ;    rst 08h
+0054   405C             ;    in a, (21h)
+0055   405C             ;    bit 0,a
+0056   405C             ;    jr z, inner
+0057   405C AF              xor a
+0058   405D             
+0059   405D                 ; read back
+0060   405D DB 20           in a, (20h)
+0061   405F CF              rst 08h ; should be 30h => 0..9
+0062   4060             
+0063   4060 05              dec b
+0064   4061 18 F3           jr outer
+0065   4063             
+0066   4063 C9              ret
+0067   4064             
+0068   4064             printInline:
+0069   4064 E3              EX 	(SP),HL 	; PUSH HL and put RET ADDress into HL
+0070   4065 F5              PUSH 	AF
+0071   4066 C5              PUSH 	BC
+0072   4067 7E          nextILChar:	LD 	A,(HL)
+0073   4068 FE 00           CP	0
+0074   406A 28 04           JR	Z,endOfPrint
+0075   406C CF              RST 08H
+0076   406D 23              INC HL
+0077   406E 18 F7           JR	nextILChar
+0078   4070 23          endOfPrint:	INC 	HL 		; Get past "null" terminator
+0079   4071 C1              POP 	BC
+0080   4072 F1              POP 	AF
+0081   4073 E3              EX 	(SP),HL 	; PUSH new RET ADDress on stack and restore HL
+0082   4074 C9              RET
+0083   4075             
+0084   4075             
+0085   4075                 .END
+tasm: Number of errors = 0

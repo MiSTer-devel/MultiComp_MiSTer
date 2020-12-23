@@ -159,7 +159,6 @@ module emu
 );
 
 assign ADC_BUS  = 'Z;
-assign USER_OUT = '1;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
@@ -176,12 +175,17 @@ assign VIDEO_ARX = 4;
 assign VIDEO_ARY = 3;
 assign VGA_SL = 0;
 assign VGA_F1 = 0;
-//assign CE_PIXEL=1;
 
 assign AUDIO_S = 0;
 assign AUDIO_L = 0;
 assign AUDIO_R = 0;
 assign AUDIO_MIX = 0;
+
+// enable input on USER_IO[3] for ch376s MISO
+//assign USER_OUT[0] = 1'b0;
+//assign USER_OUT[1] = 1'b0;
+//assign USER_OUT[3] = 1'b1;
+//assign USER_OUT[6] = 1'b0;
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -351,27 +355,51 @@ begin
 	UART_TXD	<= _txd[cpu_type];
 end
 
+reg [3:0] test;
+
+always @(posedge clk_sys) begin
+	if (reset) begin
+		test <= 4'd0;
+	end
+	test <= test + 4'd1;
+
+	USER_OUT[0] <= test[0];
+	USER_OUT[1] <= test[0];
+
+	USER_OUT[2] <= test[0];
+	USER_OUT[3] <= test[1];
+	USER_OUT[4] <= test[2];
+	USER_OUT[5] <= test[3];
+
+	USER_OUT[6] <= test[3];
+end
+
 MicrocomputerZ80CPM MicrocomputerZ80CPM
 (
-	.N_RESET(~reset & cpu_type == cpuZ80CPM),
-	.clk(cpu_type == cpuZ80CPM ? clk_sys : 0),
-	.R(_r[0][1:0]),
-	.G(_g[0][1:0]),
-	.B(_b[0][1:0]),
-	.HS(_hs[0]),
-	.VS(_vs[0]),
-	.hBlank(_hblank[0]),
-	.vBlank(_vblank[0]),
-	.cepix(_CE_PIXEL[0]),
-	.ps2Clk(PS2_CLK),
-	.ps2Data(PS2_DAT),
-	.sdCS(_SD_CS[0]),
-	.sdMOSI(_SD_MOSI[0]),
-	.sdMISO(sdmiso),
-	.sdSCLK(_SD_SCK[0]),
-	.driveLED(_driveLED[0]),
-	.rxd1 (UART_RXD),
-	.txd1 (_txd[0])
+	.N_RESET	(~reset & cpu_type == cpuZ80CPM),
+	.clk		(cpu_type == cpuZ80CPM ? clk_sys : 0),
+	.R			(_r[0][1:0]),
+	.G			(_g[0][1:0]),
+	.B			(_b[0][1:0]),
+	.HS			(_hs[0]),
+	.VS			(_vs[0]),
+	.hBlank		(_hblank[0]),
+	.vBlank		(_vblank[0]),
+	.cepix		(_CE_PIXEL[0]),
+	.ps2Clk		(PS2_CLK),
+	.ps2Data	(PS2_DAT),
+	.sdCS		(_SD_CS[0]),
+	.sdMOSI		(_SD_MOSI[0]),
+	.sdMISO		(sdmiso),
+	.sdSCLK		(_SD_SCK[0]),
+	.driveLED	(_driveLED[0]),
+	.rxd1 		(UART_RXD),
+	.txd1 		(_txd[0]),
+	// CH376s via USERIO
+	//.usbSCLK 	(USER_OUT[2]),
+	//.usbMISO 	(USER_IN[3]),
+	//.usbMOSI 	(USER_OUT[4]),
+	//.usbCS 		(USER_OUT[5])
 );
 
 MicrocomputerZ80Basic MicrocomputerZ80Basic

@@ -54,11 +54,16 @@ entity MicrocomputerZ80CPM is
 		ps2Clk		: in std_logic;
 		ps2Data		: in std_logic;
 
-		sdCS			: out std_logic;
+		sdCS		: out std_logic;
 		sdMOSI		: out std_logic;
 		sdMISO		: in std_logic;
 		sdSCLK		: out std_logic;
-		driveLED		: out std_logic :='1'	
+		driveLED	: out std_logic :='1';
+
+		usbCS		: out std_logic;
+		usbMOSI		: out std_logic;
+		usbMISO		: in std_logic;
+		usbSCLK		: out std_logic
 	);
 end MicrocomputerZ80CPM;
 
@@ -75,6 +80,7 @@ architecture struct of MicrocomputerZ80CPM is
 	signal internalRam2DataOut		: std_logic_vector(7 downto 0);
 	signal interface1DataOut		: std_logic_vector(7 downto 0);
 	signal interface2DataOut		: std_logic_vector(7 downto 0);
+	signal ch376sDataOut				: std_logic_vector(7 downto 0);
 	signal sdCardDataOut				: std_logic_vector(7 downto 0);
 
 	signal n_memWR						: std_logic :='1';
@@ -95,6 +101,7 @@ architecture struct of MicrocomputerZ80CPM is
 	signal n_basRomCS					: std_logic :='1';
 	signal n_interface1CS			: std_logic :='1';
 	signal n_interface2CS			: std_logic :='1';
+	signal n_ch376sCS					: std_logic :='1';
 	signal n_sdCardCS					: std_logic :='1';
 
 	signal serialClkCount			: std_logic_vector(15 downto 0);
@@ -107,6 +114,28 @@ architecture struct of MicrocomputerZ80CPM is
 	--CPM
 	signal n_RomActive 				: std_logic := '0';
 
+component ch376s is
+	port (
+	  	-- interface
+		clk : 	in std_logic;
+		rd : 	in std_logic;
+		wr : 	in std_logic;
+		reset : in std_logic;
+		a0 : 	in std_logic;
+		
+		-- SPI wires
+		sck : 	out std_logic;
+		sdcs : 	out std_logic;
+		sdo : 	out std_logic; -- reg
+		sdi : 	in std_logic;
+		
+		-- data
+		din : 	in std_logic_vector (7 downto 0);
+		dout : 	out std_logic_vector (7 downto 0) -- reg
+	);
+end component;
+	
+	
 begin
 	--CPM
 	-- Disable ROM if out 38. Re-enable when (asynchronous) reset pressed
@@ -234,6 +263,24 @@ port map(
 	clk => sdClock -- twice the spi clk
 );
 
+usb : ch376s
+port map (
+	sdcs => usbCS,
+	sdo => usbMOSI,
+	sdi => usbMISO,
+	sck => usbSCLK,
+
+	wr => not (n_ch376sCS or n_ioWR),
+	rd => not (n_ch376sCS or n_ioRD),
+
+	dout => ch376sDataOut,
+	din => cpuDataOut,
+	
+	a0 => cpuAddress (0),
+	reset => not N_RESET,
+	clk => sdClock
+);
+
 
 -- ____________________________________________________________________________________
 -- MEMORY READ/WRITE LOGIC GOES HERE
@@ -250,6 +297,7 @@ n_memRD <= n_RD or n_MREQ;
 n_basRomCS <= '0' when cpuAddress(15 downto 13) = "000" and n_RomActive = '0' else '1'; --8K at bottom of memory
 n_interface1CS <= '0' when cpuAddress(7 downto 1) = "1000000" and (n_ioWR='0' or n_ioRD = '0') else '1'; -- 2 Bytes $80-$81
 n_interface2CS <= '0' when cpuAddress(7 downto 1) = "1000001" and (n_ioWR='0' or n_ioRD = '0') else '1'; -- 2 Bytes $82-$83
+n_ch376sCS <= '0' when cpuAddress(7 downto 1) = "0010000" and (n_ioWR='0' or n_ioRD = '0') else '1'; -- 2 Bytes $20-$21
 n_sdCardCS <= '0' when cpuAddress(7 downto 3) = "10001" and (n_ioWR='0' or n_ioRD = '0') else '1'; -- 8 Bytes $88-$8F
 n_internalRam1CS <= not n_basRomCS; -- Full Internal RAM - 64 K
 
@@ -260,6 +308,7 @@ n_internalRam1CS <= not n_basRomCS; -- Full Internal RAM - 64 K
 cpuDataIn <=
 interface1DataOut when n_interface1CS = '0' else
 interface2DataOut when n_interface2CS = '0' else
+ch376sDataOut when n_ch376sCS = '0' else
 sdCardDataOut when n_sdCardCS = '0' else
 basRomData when n_basRomCS = '0' else
 internalRam1DataOut when n_internalRam1CS= '0' else
@@ -272,6 +321,8 @@ x"FF";
 
 -- SUB-CIRCUIT CLOCK SIGNALS 
 serialClock <= serialClkCount(15);
+--sdClock <= clk;
+
 process (clk)
 begin
 	if rising_edge(clk) then
@@ -281,19 +332,20 @@ begin
 		else
 			cpuClkCount <= (others=>'0');
 		end if;
-		if cpuClkCount < 2 then -- 2 when 10MHz, 2 when 12.5MHz, 2 when 16.6MHz, 1 when 25MHz
+		
+		if cpuClkCount < 4 then -- 2 when 10MHz, 2 when 12.5MHz, 2 when 16.6MHz, 1 when 25MHz
 			cpuClock <= '0';
 		else
 			cpuClock <= '1';
 		end if; 
 
-		if sdClkCount < 49 then -- 1MHz
+		if sdClkCount < 1 then -- 25MHz
 			sdClkCount <= sdClkCount + 1;
 		else
 			sdClkCount <= (others=>'0');
 		end if;
 
-		if sdClkCount < 25 then
+		if sdClkCount < 1 then -- 12,5Mhz
 			sdClock <= '0';
 		else
 			sdClock <= '1';
