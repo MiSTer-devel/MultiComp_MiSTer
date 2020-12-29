@@ -33,57 +33,57 @@
 module spi
 (
   	// interface
-	input           clk,      // system clock
+	input           clk,	// system clock
   	input           rd,
 	input			wr,
   	input			reset,
 	
 	// SPI wires
-	output 			sck,      // SCK
-	output 			sdcs,	   // SCS
-	output reg      sdo,      // MOSI
-	input           sdi,      // MISO
+	output 			sck,	// SCK
+	output 			sdcs,	// SCS
+	output reg  	sdo,	// MOSI
+	input           sdi,	// MISO
 
   	// data
 	input      [7:0] din,
   	output reg [7:0] dout,
   
 	// output
-	output           ready    // start strobe, 1 clock length
+	output           ready 	// start strobe, 1 clock length
 );
 
-reg  [4:0] counter;
+	reg  [4:0] counter;
 
-assign sck = counter[0];
-assign sdcs = 1'b0; // slave always selected
-assign ready = counter[4];  // 0 - transmission in progress
-  
-always @(posedge clk) begin
-	reg [7:0] shift;
+	assign sck 	= counter[0];
+	assign sdcs = 1'b0; 		// slave always selected
+	assign ready = counter[4];  // 0 - transmission in progress
+	
+	always @(posedge clk) begin
+		reg [7:0] shift;
 
-    if (reset) begin
-      counter[4] <= 5'b0;
-    end
-    else if (wr) begin
-		counter <= 5'b0;
-		sdo <= din[7];
-		shift[7:1] <= din[6:0];
-	end
-  	else if (!ready) begin
-      	counter <= counter + 5'd1;
-
-		// shift in (rising edge of SCK)
-		if (!sck) begin
-			shift[0] <= sdi;
-          	if (&counter[3:1]) dout <= {shift[7:1], sdi};
+		if (reset) begin
+		counter[4] <= 5'b0;
 		end
+		else if (wr) begin
+			counter <= 5'b0;
+			sdo <= din[7];
+			shift[7:1] <= din[6:0];
+		end
+		else if (!ready) begin
+			counter <= counter + 5'd1;
 
-		// shift out (falling edge of sck)
-		if (sck) begin
-			sdo <= shift[7];
-			shift[7:1] <= shift[6:0]; // last bit remains after end of exchange
+			// shift in (rising edge of SCK)
+			if (!sck) begin
+				shift[0] <= sdi;
+				if (&counter[3:1]) dout <= {shift[7:1], sdi};
+			end
+
+			// shift out (falling edge of sck)
+			if (sck) begin
+				sdo <= shift[7];
+				shift[7:1] <= shift[6:0]; // last bit remains after end of exchange
+			end
 		end
 	end
-end
 
 endmodule

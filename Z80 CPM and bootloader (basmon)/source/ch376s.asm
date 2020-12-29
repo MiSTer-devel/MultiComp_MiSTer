@@ -15,18 +15,26 @@ CH375_CMD_RESET_ALL .EQU 05H
     .TEXT "Send A"
     .DB CR,LF,0
 
-    ld a, CH375_CMD_RESET_ALL
-    out (20h),a
+    ;ld a, CH375_CMD_RESET_ALL
+    ;out (20h),a
 
-    ld a, CH375_CMD_CHECK_EXIST
+    ;ld a, CH375_CMD_CHECK_EXIST
+    ;out (20h),a
+    ld b, 10
+    ld a, 0AAH
+_again:
     out (20h),a
-    ld a, 'A'
-    out (20h),a
+    push bc
+    ld b, 50
+_again2:
+    djnz _again2
+    pop bc
+    djnz _again
     ; receive result
-    xor a
-    out (20h),a
-    in a, (20h)
-    xor 255
+    ;xor a
+    ;out (20h),a
+    ;in a, (20h)
+    ;xor 255
 
     CALL	printInline
     .TEXT "Received "

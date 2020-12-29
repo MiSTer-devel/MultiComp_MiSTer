@@ -182,10 +182,7 @@ assign AUDIO_R = 0;
 assign AUDIO_MIX = 0;
 
 // enable input on USER_IO[3] for ch376s MISO
-//assign USER_OUT[0] = 1'b0;
-//assign USER_OUT[1] = 1'b0;
-//assign USER_OUT[3] = 1'b1;
-//assign USER_OUT[6] = 1'b0;
+assign USER_OUT[3] = 1'b1;
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -354,26 +351,29 @@ begin
 	driveLED 	<= _driveLED[cpu_type];
 	UART_TXD	<= _txd[cpu_type];
 end
-
-reg [3:0] test;
-
+/*
+reg [6:0] test;
+reg [4:0] mycnt;
+initial test = 0;
+initial mycnt = 0;
 always @(posedge clk_sys) begin
-	if (reset) begin
-		test <= 4'd0;
+	if (mycnt>25) begin
+		test <= test + 1'b1;
+		mycnt <= 0;
 	end
-	test <= test + 4'd1;
+	else begin
+		mycnt <= mycnt + 1'b1;
+	end
 
 	USER_OUT[0] <= test[0];
-	USER_OUT[1] <= test[0];
-
-	USER_OUT[2] <= test[0];
-	USER_OUT[3] <= test[1];
-	USER_OUT[4] <= test[2];
-	USER_OUT[5] <= test[3];
-
-	USER_OUT[6] <= test[3];
+	USER_OUT[1] <= test[1];
+	USER_OUT[2] <= test[2];
+	USER_OUT[3] <= test[3];
+	USER_OUT[4] <= test[4];
+	USER_OUT[5] <= test[5];
+	USER_OUT[6] <= test[6];
 end
-
+*/
 MicrocomputerZ80CPM MicrocomputerZ80CPM
 (
 	.N_RESET	(~reset & cpu_type == cpuZ80CPM),
@@ -396,10 +396,10 @@ MicrocomputerZ80CPM MicrocomputerZ80CPM
 	.rxd1 		(UART_RXD),
 	.txd1 		(_txd[0]),
 	// CH376s via USERIO
-	//.usbSCLK 	(USER_OUT[2]),
-	//.usbMISO 	(USER_IN[3]),
-	//.usbMOSI 	(USER_OUT[4]),
-	//.usbCS 		(USER_OUT[5])
+	.usbSCLK 	(USER_OUT[2]),
+	.usbMISO 	(USER_IN[3]),
+	.usbMOSI 	(USER_OUT[4]),
+	.usbCS 		(USER_OUT[5])
 );
 
 MicrocomputerZ80Basic MicrocomputerZ80Basic
