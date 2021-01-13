@@ -1,0 +1,230 @@
+0001   0000             ;==================================================================================
+0002   0000             ; Contents of this file are copyright Grant Searle
+0003   0000             ;
+0004   0000             ; You have permission to use this for NON COMMERCIAL USE ONLY
+0005   0000             ; If you wish to use it elsewhere, please include an acknowledgement to myself.
+0006   0000             ;
+0007   0000             ; http://searle.hostei.com/grant/index.html
+0008   0000             ;
+0009   0000             ; eMail: home.micros01@btinternet.com
+0010   0000             ;
+0011   0000             ; If the above don't work, please perform an Internet search to see if I have
+0012   0000             ; updated the web page hosting service.
+0013   0000             ;
+0014   0000             ;==================================================================================
+0015   0000             
+0016   0000             numDrives	.EQU	15		; Not including A:
+0017   0000             
+0018   0000             
+0019   0000             SD_DATA		.EQU	088H
+0020   0000             SD_CONTROL	.EQU	089H
+0021   0000             SD_STATUS	.EQU	089H
+0022   0000             SD_LBA0		.EQU	08AH
+0023   0000             SD_LBA1		.EQU	08BH
+0024   0000             SD_LBA2		.EQU	08CH
+0025   0000             
+0026   0000             LF		.EQU	0AH		;line feed
+0027   0000             FF		.EQU	0CH		;form feed
+0028   0000             CR		.EQU	0DH		;carriage RETurn
+0029   0000             
+0030   0000             ;====================================================================================
+0031   0000             
+0032   5000             		.ORG	5000H		; Format program origin.
+0033   5000             
+0034   5000             
+0035   5000 CD D5 50    		CALL	printInline
+0036   5003 43502F4D2046		.TEXT "CP/M Formatter 2.0 by G. Searle 2013"
+0036   5009 6F726D617474657220322E3020627920472E20536561726C652032303133
+0037   5027 0D 0A 00    		.DB CR,LF,0
+0038   502A             
+0039   502A 3E 41       		LD	A,'A'
+0040   502C 32 E7 50    		LD	(drvName),A
+0041   502F             
+0042   502F             ; There are 512 directory entries per disk, 4 DIR entries per sector
+0043   502F             ; So 128 x 128 byte sectors are to be initialised
+0044   502F             ; The drive uses 512 byte sectors, so 32 x 512 byte sectors per disk
+0045   502F             ; require initialisation
+0046   502F             
+0047   502F             ;Drive 0 (A:) is slightly different due to reserved track, so DIR sector starts at 32
+0048   502F 3A E7 50    		LD	A,(drvName)
+0049   5032 CF          		RST	08H		; Print drive letter
+0050   5033 3C          		INC	A
+0051   5034 32 E7 50    		LD	(drvName),A
+0052   5037             
+0053   5037 3E 20       		LD	A,$20
+0054   5039 32 E6 50    		LD	(secNo),A
+0055   503C             
+0056   503C             processSectorA:
+0057   503C             
+0058   503C 3A E6 50    		LD	A,(secNo)
+0059   503F D3 8A       		OUT 	(SD_LBA0),A
+0060   5041 3E 00       		LD	A,0
+0061   5043 D3 8B       		OUT 	(SD_LBA1),A
+0062   5045 3E 00       		LD	A,0
+0063   5047 D3 8C       		OUT 	(SD_LBA2),A
+0064   5049 3E E0       		LD	a,$E0
+0065   504B             
+0066   504B CD A7 50    		call	writehst
+0067   504E             
+0068   504E 3A E6 50    		LD	A,(secNo)
+0069   5051 3C          		INC	A
+0070   5052 32 E6 50    		LD	(secNo),A
+0071   5055 FE 40       		CP	$40
+0072   5057 20 E3       		JR	NZ, processSectorA
+0073   5059             
+0074   5059             
+0075   5059             
+0076   5059             ;Drive 1 onwards (B: etc) don't have reserved tracks, so sector starts at 0
+0077   5059             
+0078   5059 11 40 00    		LD 	DE,$0040  ; HL increment
+0079   505C 21 40 00    		LD 	HL,$0040  ; H = LBA2, L=LBA1, initialise for drive 1 (B:)
+0080   505F             
+0081   505F 06 0F       		LD	B,numDrives
+0082   5061             
+0083   5061             processDirs:
+0084   5061             
+0085   5061 3A E7 50    		LD	A,(drvName)
+0086   5064 CF          		RST	08H		; Print drive letter
+0087   5065 3C          		INC	A
+0088   5066 32 E7 50    		LD	(drvName),A
+0089   5069             
+0090   5069 3E 00       		LD	A,0
+0091   506B 32 E6 50    		LD	(secNo),A
+0092   506E             
+0093   506E             processSector:
+0094   506E 3A E6 50    		LD	A,(secNo)
+0095   5071 D3 8A       		OUT 	(SD_LBA0),A
+0096   5073 7D          		LD	A,L
+0097   5074 D3 8B       		OUT 	(SD_LBA1),A
+0098   5076 7C          		LD	A,H
+0099   5077 D3 8C       		OUT 	(SD_LBA2),A
+0100   5079             
+0101   5079 CD A7 50    		call	writehst
+0102   507C             
+0103   507C 3A E6 50    		LD	A,(secNo)
+0104   507F 3C          		INC	A
+0105   5080 32 E6 50    		LD	(secNo),A
+0106   5083 FE 20       		CP	$20
+0107   5085 20 E7       		JR	NZ, processSector
+0108   5087             
+0109   5087 19          		ADD	HL,DE
+0110   5088             
+0111   5088 05          		DEC	B
+0112   5089 20 D6       		JR	NZ,processDirs
+0113   508B             
+0114   508B CD D5 50    		CALL	printInline
+0115   508E 0D 0A       		.DB CR,LF
+0116   5090 466F726D6174		.TEXT "Formatting complete"
+0116   5096 74696E6720636F6D706C657465
+0117   50A3 0D 0A 00    		.DB CR,LF,0
+0118   50A6             
+0119   50A6 C9          		RET				
+0120   50A7             
+0121   50A7             ;================================================================================================
+0122   50A7             ; Write physical sector to host
+0123   50A7             ;================================================================================================
+0124   50A7             
+0125   50A7             writehst:
+0126   50A7 F5          		PUSH 	AF
+0127   50A8 C5          		PUSH 	BC
+0128   50A9 E5          		PUSH 	HL
+0129   50AA             
+0130   50AA DB 89       wrWait1: IN	A,(SD_STATUS)
+0131   50AC FE 80       		CP	128
+0132   50AE 20 FA       		JR	NZ,wrWait1
+0133   50B0             
+0134   50B0             		;CALL 	setLBAaddr
+0135   50B0             		
+0136   50B0 3E 01       		LD	A,$01	; 01 = Write block
+0137   50B2 D3 89       		OUT	(SD_CONTROL),A
+0138   50B4             	
+0139   50B4 0E 04       		LD 	c,4
+0140   50B6             wr4secs:
+0141   50B6 21 E8 50    		LD 	HL,dirData
+0142   50B9 06 80       		LD 	b,128
+0143   50BB             wrByte:
+0144   50BB DB 89       wrWait2: IN	A,(SD_STATUS)
+0145   50BD FE A0       		CP	160 ; Write buffer empty
+0146   50BF 20 FA       		JR	NZ,wrWait2
+0147   50C1             
+0148   50C1             		;LD	A,'.'
+0149   50C1             		;RST	08H	
+0150   50C1             		
+0151   50C1             		; UPDATE S0urceror, inserted wait cycle between IN and OUT
+0152   50C1             		; to resolve unknown write issue in sd_controller.vhd in combination 
+0153   50C1             		; with MISTer virtual SD interface sys/sd_card.sv
+0154   50C1             		; which results in hangs or write errors.
+0155   50C1 C5          		push bc
+0156   50C2 06 32       		ld b,50
+0157   50C4             _again:
+0158   50C4 10 FE       		djnz _again	
+0159   50C6 C1          		pop bc
+0160   50C7             		; END UPDATE
+0161   50C7             
+0162   50C7 7E          		LD 	A,(HL)
+0163   50C8 D3 88       		OUT	(SD_DATA),A
+0164   50CA             
+0165   50CA 23          		INC 	HL
+0166   50CB 05          		dec 	b
+0167   50CC 20 ED       		JR 	NZ, wrByte
+0168   50CE             
+0169   50CE 0D          		dec 	c
+0170   50CF 20 E5       		JR 	NZ,wr4secs
+0171   50D1             
+0172   50D1 E1          		POP 	HL
+0173   50D2 C1          		POP 	BC
+0174   50D3 F1          		POP 	AF
+0175   50D4             		
+0176   50D4             		;XOR 	a
+0177   50D4             		;ld	(erflag),a
+0178   50D4 C9          		RET
+0179   50D5             
+0180   50D5             ;================================================================================================
+0181   50D5             ; Utilities
+0182   50D5             ;================================================================================================
+0183   50D5             
+0184   50D5             printInline:
+0185   50D5 E3          		EX 	(SP),HL 	; PUSH HL and put RET ADDress into HL
+0186   50D6 F5          		PUSH 	AF
+0187   50D7 C5          		PUSH 	BC
+0188   50D8 7E          nextILChar:	LD 	A,(HL)
+0189   50D9 FE 00       		CP	0
+0190   50DB 28 04       		JR	Z,endOfPrint
+0191   50DD CF          		RST 	08H
+0192   50DE 23          		INC 	HL
+0193   50DF 18 F7       		JR	nextILChar
+0194   50E1 23          endOfPrint:	INC 	HL 		; Get past "null" terminator
+0195   50E2 C1          		POP 	BC
+0196   50E3 F1          		POP 	AF
+0197   50E4 E3          		EX 	(SP),HL 	; PUSH new RET ADDress on stack and restore HL
+0198   50E5 C9          		RET
+0199   50E6             
+0200   50E6             
+0201   50E6 00          secNo		.db	0
+0202   50E7 00          drvName		.db	0
+0203   50E8             
+0204   50E8             
+0205   50E8             ; Directory data for 1 x 128 byte sector
+0206   50E8             dirData:
+0207   50E8 E52020202020		.DB $E5,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$00,$00,$00,$00
+0207   50EE 20202020202000000000
+0208   50F8 000000000000		.DB $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+0208   50FE 00000000000000000000
+0209   5108             
+0210   5108 E52020202020		.DB $E5,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$00,$00,$00,$00
+0210   510E 20202020202000000000
+0211   5118 000000000000		.DB $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+0211   511E 00000000000000000000
+0212   5128             
+0213   5128 E52020202020		.DB $E5,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$00,$00,$00,$00
+0213   512E 20202020202000000000
+0214   5138 000000000000		.DB $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+0214   513E 00000000000000000000
+0215   5148             
+0216   5148 E52020202020		.DB $E5,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$00,$00,$00,$00
+0216   514E 20202020202000000000
+0217   5158 000000000000		.DB $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+0217   515E 00000000000000000000
+0218   5168             
+0219   5168             		.END
+tasm: Number of errors = 0
