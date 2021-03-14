@@ -322,8 +322,8 @@ MAIN1		CALL RDCHR	; Get a character from the input port
 
 		AND  $5F	; Make character uppercase
 
-		;; CP   'B'	
-		;; JP   Z,BASIC
+		CP   'I'	
+		JP   Z,INTERPRT
 
 		CP   'G'
 		JP   Z,M_GOTO
@@ -499,11 +499,9 @@ LOAD00  	LD   HL,LDETXT	; Print load complete message
 		RET
 
 ;------------------------------------------------------------------------------
-; Start BASIC command
+; Start Interpreter
 ;------------------------------------------------------------------------------
-BASIC
-    		LD HL,M_BASTXT
-		CALL M_PRINT
+INTERPRT
 		JP  STARTINT
 		RET
 
@@ -527,7 +525,7 @@ CPMTXT
 
 CPMTXT2
 		.BYTE	$0D,$0A
-		.TEXT	"Loading CP/M..."
+		.TEXT	"Loading CP/M"
 		.BYTE	$0D,$0A,$00
 
 CPMLOAD2
@@ -637,8 +635,10 @@ rdWait2: IN	A,(SD_STATUS)
 
 
 M_SIGNON	.BYTE	"CP/M Boot ROM 2.0"
-		.BYTE	" by G. Searle"
+		.BYTE	" based on design by G. Searle"
 		.BYTE	$0D,$0A
+		.BYTE	$0D,$0A
+		.TEXT	"I        - Start Interpreter"
 		.BYTE	$0D,$0A
 		.TEXT	"X        - Boot CP/M (load $D000-$FFFF)"
 		.BYTE	$0D,$0A
@@ -648,17 +648,12 @@ M_SIGNON	.BYTE	"CP/M Boot ROM 2.0"
 		.BYTE	$0D,$0A
        	.BYTE   $00
 
-M_BASTXT
-		.BYTE	$0D,$0A
-		.TEXT	"Cold or warm?"
-		.BYTE	$0D,$0A,$00
-
 CKSUMERR	.BYTE	"Checksum error"
 		.BYTE	$0D,$0A,$00
 
 INITTXT  
 		.BYTE	$0C
-		.TEXT	"Press [space] to activate the console."
+		.TEXT	"Press [space] to activate console."
 		.BYTE	$0D,$0A, $00
 
 LDETXT  
@@ -686,9 +681,8 @@ DEL     .EQU    7FH             ; Delete
 ;===========================================================================================================================
 
 ; NASCOM ROM BASIC Ver 4.7, 
-; used to be here, removed to get rid of the (C) 1978 Microsoft
+; used to be here, removed to get rid of the '(C) 1978 Microsoft'
 
-STARTINT:
-	;; Drop in your favourite interpreter here!
-	;; 	RET
+STARTINT:							  
+#INCLUDE "SOURCE\\INTPRT.ASM"
 .end

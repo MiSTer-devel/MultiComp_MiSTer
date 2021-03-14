@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Use upper case. DOS can't handle cases!
+name=MON
+sourcedir=source
+path="${sourcedir}/${name}"
+
+# Install the interpreter as ${sourcedir}/intprt.asm
+# If WITH_BASIC is set, the Basic interpreter is extracted from basMon.asm.
+# Otherwise, if ${sourcedir}/intprt.asm exists it is left untouched or
+# if it doesn't, it is linked to the dummy interpreter ${sourcedir}/dummy.asm
+if [ -n "$WITH_BASIC" ]
+then
+	 if [ ! -e ${sourcedir}/basMon.asm ]
+	 then
+		  sed -n '490,504p;689,4990p' ${sourcedir}/basMon.asm > ${sourcedir}/bas.asm
+	 fi
+	 rm ${sourcedir}/intprt.asm
+	 ln -s bas.asm ${sourcedir}/intprt.asm
+else
+	 if [ ! -e ${sourcedir}/intprt.asm ]
+	 then
+		 ln -s dummy.asm ${sourcedir}/intprt.asm
+	 fi
+fi
+
+# Assemble
+# The listing file *.LST is inspected for the error count in the last line.
+# Abort on error.
+tasmcmd="tasm -80 ${sourcedir}\\${name}.asm"
+rm ${sourcedir}/${name}.LST
+dosbox -c "mount c ." -c "c:" -c "${tasmcmd}" -c "exit"
+if [ ! -e ${path}.LST ]
+then
+	echo "Could not start assembling."
+	exit 1
+else if [ "$(tail -1 ${path}.LST | tr -d $'\r')" != "tasm: Number of errors = 0" ]
+	  then
+			echo "Errors while assembling. See ${path}.LST"
+			exit 2
+	  fi
+fi
+
+# Remove the first line and convert to Unix line endings.
+sed -e 1d < ${path}.OBJ | tr -d $'\r' > ${path}.HEX
+
+# Replace the content of the file where Quartus will read the ROM image.
+cp ${path}.HEX ../ROMS/Z80/CPM_BASIC.HEX

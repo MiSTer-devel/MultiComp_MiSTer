@@ -1,0 +1,18 @@
+You can assemble a ROM image for the Z80 CP/M computer by running the
+bash script instcpmhex. The script was tested on Debian Bullsey with
+Dosbox installed. But it might run elsewhere. 
+
+The assembler code is taken from source/mon.asm, which
+contains the monitor without the Basic (or any other interpreter).  An
+interpreter is included from source/intprt.asm.  By default and if
+this file is not present it will become a link to source/dummy.asm,
+which will only print a text when the user calls the interpreter.
+
+If you set the environment variable WITH_BASIC, the basic interpreter
+is extracted from source/basMon.asm to source/bas.asm. A link is then
+installed such, that this basic interpreter is included in the ROM
+image and can be called from the monitor.
+
+The result of the assembly is tweaked so it will be accepted by
+Quartus and then used to replace the content of the input file for the
+Z80 CP/M ROM image.  You will then have to generate the core.
