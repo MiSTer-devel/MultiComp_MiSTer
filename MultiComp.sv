@@ -163,7 +163,7 @@ assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 
-assign UART_RTS = UART_CTS;
+//assign UART_DTR = 1;
 assign UART_DTR = UART_DSR;
 
 assign LED_USER  = vsd_sel & sd_act;
@@ -333,7 +333,10 @@ wire [3:0] _CE_PIXEL;
 wire [3:0] _SD_CS;
 wire [3:0] _SD_MOSI;
 wire [3:0] _SD_SCK;
-wire [3:0] _txd[3:0];
+wire [3:0] _txd;
+wire [3:0] _dtr;
+wire [3:0] _rts;
+
 
 always_comb 
 begin
@@ -349,7 +352,8 @@ begin
 	sdmosi		<= _SD_MOSI[cpu_type];
 	sdclk		<= _SD_SCK[cpu_type];
 	driveLED 	<= _driveLED[cpu_type];
-	UART_TXD	<= _txd[cpu_type];
+	UART_TXD	<= _txd[cpu_type]; 
+	UART_RTS        <= _rts[cpu_type]; 
 end
 /*
 reg [6:0] test;
@@ -395,6 +399,8 @@ MicrocomputerZ80CPM MicrocomputerZ80CPM
 	.driveLED	(_driveLED[0]),
 	.rxd1 		(UART_RXD),
 	.txd1 		(_txd[0]),
+	.rts1           (_rts[0]),
+	.cts1           (UART_CTS),
 	// CH376s via USERIO
 	.usbSCLK 	(USER_OUT[2]),
 	.usbMISO 	(USER_IN[3]),
