@@ -8,8 +8,6 @@ Ported by Cyril Venditti and Fred VanEijk.
 Updated by S0urceror to use MiSTer image files, use all 4 machine types and have the MiSTer 
 UART connected to serial interface 2 of the core. The latter allows to use the core remotely.
 
-Here's a cleaned-up and more organized version of the information:
-
 ## Using the MiSTer Serial Terminal/Console
 
 ### Connection Methods:
