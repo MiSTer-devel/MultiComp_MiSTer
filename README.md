@@ -17,9 +17,9 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
 ### Setting Up the Connection:
 
 #### For UART/Serial with PuTTY:
-- Connect at 115200 baud, 8 bits, no parity to the COM port#### 
+- Connect at 115200 baud, 8 bits, no parity to the COM port.
 #### For SSH with PuTTY:
-- Connect to the ip address of your MISTer fpga
+- Connect to the ip address of your MISTer fpga.
 
 #### Linux command line to establish the connection to the core:
 
