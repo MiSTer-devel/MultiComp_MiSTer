@@ -59,7 +59,7 @@ assign sd_lba = sdhc ? lba : {9'd0, lba[31:9]};
 
 wire[31:0] OCR = { 1'b1, sdhc, 30'd0 };  // bit30 = 1 -> high capaciry card (sdhc) // bit31 = 0 -> card power up finished
 wire [7:0] READ_DATA_TOKEN     = 8'hfe;
-wire [7:0] WRITE_DATA_RESPONSE = 8'h05;
+wire [7:0] WRITE_DATA_RESPONSE = 8'he5;
 
 // number of bytes to wait after a command before sending the reply
 localparam NCR=3;
