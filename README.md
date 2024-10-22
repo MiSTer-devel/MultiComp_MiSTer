@@ -105,16 +105,17 @@ Note the process for this is mostly described in PART 2 - Using the Windows pack
 
 We have also added a zip file in the CPM-sd-image directory with a set of application pre installed.  See cpm-apps.zip.  This file can also be copied to the /media/fat/games/MultipComp directory and mounted.  It contains 5 drives A,C,D,E, and F where A still only has the DOWNLOAD program and the other drives contain the following.
 
-C:               D:               E:               F:  
-----------------------------------------------------------------
-0_FILES.TXT      0_GAMES          0_OLDUTILS       0_NEWUTILS
-1_BDS_TINY_C     1_MUMATHSIMP     1_F80M80BASIC    1_ROMS
-2_APL            2_CROSSTALK      2_AZTEC_C_106D   2_ZSYSTEM
-3_JANUS_ADA15    3_QTERM43        3_TPASCAL3       3_MICROPRO
-4_MS_COBOL       4_CLINK          4_DXFORTH401     4_MULTIPLAN
-5_PILOT          5_SUPERSFTUTIL   5_PLI14          5_DBASEII
-6_SYSLIB         6_RCPM           6_ALGOLM         6_DWG_APPS
-7_BBC BASIC      7_DDTZ SOURCES   7_SUPERCALC      8_MICROSHELL
+| C:              | D:                | E:               | F:              |
+|-----------------|-------------------|------------------|-----------------|
+| 0_FILES.TXT     | 0_GAMES            | 0_OLDUTILS       | 0_NEWUTILS      |
+| 1_BDS_TINY_C    | 1_MUMATHSIMP       | 1_F80M80BASIC    | 1_ROMS          |
+| 2_APL           | 2_CROSSTALK        | 2_AZTEC_C_106D   | 2_ZSYSTEM       |
+| 3_JANUS_ADA15   | 3_QTERM43          | 3_TPASCAL3       | 3_MICROPRO      |
+| 4_MS_COBOL      | 4_CLINK            | 4_DXFORTH401     | 4_MULTIPLAN     |
+| 5_PILOT         | 5_SUPERSFTUTIL     | 5_PLI14          | 5_DBASEII       |
+| 6_SYSLIB        | 6_RCPM             | 6_ALGOLM         | 6_DWG_APPS      |
+| 7_BBC BASIC     | 7_DDTZ SOURCES     | 7_SUPERCALC      | 8_MICROSHELL    |
+
 
 Note the use of user numbers here i.e. 0_, 1_ etc..  
 (Not all the applications were tested to run, so you are on your own)
