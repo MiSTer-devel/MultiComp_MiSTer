@@ -99,11 +99,14 @@ At this point, CP/M is installed and ready for boot. You can now proceed with in
 
 #### Boot CP/M from image file
 
-In the CPM-sd-image directory, you will find a zip file that contains a cmp.img file that can be copied to the /media/fat/games/MultipComp directory.  This file can be used to boot CP/M without the SD card.  It contains the structure for disks A thru P with A having the DOWNLOAD program available.  Use this as a strating point to place CP/M applications on the image.  See the Installing Applications section at <http://searle.x10host.com/Multicomp/cpm/fpgaCPM.html#InstallingCPM>
+Note that currently the `DOWNLOAD.COM` program is not working reliably (we hope to fix this in the future).  To get around the issues with `DOWNLOAD.COM` we have added the cpm image file and some Python based utilities, thus being able to get a working and custamizable CP/M sytem up and running.
+
+In the CPM-sd-image directory, you will find a zip file that contains a cmp.img file that can be copied to the /media/fat/games/MultipComp directory.  This file can be used to boot CP/M without the SD card.  It contains the structure for disks A thru P with A having the DOWNLOAD program and other utilities available.  Use this as a strating point to place CP/M applications on the image.  See the Installing Applications section at <http://searle.x10host.com/Multicomp/cpm/fpgaCPM.html#InstallingCPM>.  
+
 
 Note the process for this is mostly described in PART 2 - Using the Windows packager program.  The packager program is in windowsApp.  Again, this process requires the use of the tty terminal not the console, as you will be pasting the file data into the terminal.
 
-We have also added a zip file in the CPM-sd-image directory with a set of application pre installed.  See cpm-apps.zip.  This file can also be copied to the /media/fat/games/MultipComp directory and mounted.  It contains 5 drives A,C,D,E, and F where A still only has the DOWNLOAD program and the other drives contain the following.
+We have also added a zip file in the CPM-sd-image directory with a set of application pre installed.  See cpm-apps.zip.  This file can also be copied to the /media/fat/games/MultipComp directory and mounted.  It contains 5 drives A,C,D,E, and F where A still only has the DOWNLOAD program and the other drives contain the following.  The cpm.zip file contains just the basic utilities described in the  [CPM-sd-image](CPM-sd-image/README.MD)  directory.
 
 | C:              | D:                | E:               | F:              |
 |-----------------|-------------------|------------------|-----------------|
@@ -122,7 +125,9 @@ Note the use of user numbers here i.e. 0_, 1_ etc..
 
 The applications were obtained from the Obsolescence Guaranteed site.
 
-Included in the CPM-sd-image directory are also some python scripts to initialize/build the image for the CP/M disks.
+Included in the CPM-sd-image directory are also some python scripts to initialize/build the image for the CP/M disks.  Along with a script in the transient packages directory that can extract the .COM files from the package (note this was used to provide some content to build the cpm.img file provided in CPM-sd-image).
+
+To use the Python scripts we recommend using Visual Studio Code and opening the MultiComp_MiSTer directory as its project location.
 
 __Other useful links.__
 
