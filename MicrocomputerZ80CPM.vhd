@@ -22,6 +22,7 @@ entity MicrocomputerZ80CPM is
 	port(
 		N_RESET	   		: in std_logic;
 		clk				: in std_logic;
+		baud_increment	: in std_logic_vector(15 downto 0);
 
 		sramData		: inout std_logic_vector(7 downto 0);
 		sramAddress		: out std_logic_vector(15 downto 0);
@@ -63,8 +64,9 @@ entity MicrocomputerZ80CPM is
 		usbCS			: out std_logic;
 		usbMOSI			: out std_logic;
 		usbMISO			: in std_logic;
-		usbSCLK			: out std_logic
-	);
+		usbSCLK			: out std_logic;
+	    sd_ctrl_sel     : in std_logic
+		);
 end MicrocomputerZ80CPM;
 
 architecture struct of MicrocomputerZ80CPM is
@@ -104,12 +106,16 @@ architecture struct of MicrocomputerZ80CPM is
 	signal n_ch376sCS				: std_logic :='1';
 	signal n_sdCardCS				: std_logic :='1';
 
-	signal serialClkCount			: std_logic_vector(15 downto 0);
+    signal serialClkCount           : unsigned(15 downto 0);
 	signal cpuClkCount				: std_logic_vector(5 downto 0); 
 	signal sdClkCount				: std_logic_vector(5 downto 0); 	
 	signal cpuClock					: std_logic;
 	signal serialClock				: std_logic;
 	signal sdClock					: std_logic;
+    signal sdCardDataOut_sd			: std_logic_vector(7 downto 0);
+    signal sdCardDataOut_img		: std_logic_vector(7 downto 0);
+    signal driveLED_sd, driveLED_img : std_logic;
+    signal sdMISO_int : std_logic;  -- Add this signal declaration
 
 	--CPM
 	signal n_RomActive 				: std_logic := '0';
@@ -245,21 +251,37 @@ port map(
 	n_rts => rts1
 );
 
-sd1 : entity work.sd_controller
-port map(
-	sdCS 	=> 	sdCS,
-	sdMOSI 	=> 	sdMOSI,
-	sdMISO 	=> 	sdMISO,
-	sdSCLK 	=> 	sdSCLK,
-	n_wr 	=> 	n_sdCardCS or n_ioWR,
-	n_rd 	=> 	n_sdCardCS or n_ioRD,
-	n_reset => 	N_RESET,
-	dataIn 	=> 	cpuDataOut,
-	dataOut => 	sdCardDataOut,
-	regAddr => 	cpuAddress(2 downto 0),
-	driveLED=> 	driveLED,
-	clk 	=> 	clk -- 50 MHz clock = 25 MHz SPI clock
-);
+    sd1 : entity work.sd_controller
+    port map(
+        sdCS => sdCS,
+        sdMOSI => sdMOSI,
+        sdMISO => sdMISO_int,  -- Use the internal signal
+        sdSCLK => sdSCLK,
+        n_wr => n_sdCardCS or n_ioWR,
+        n_rd => n_sdCardCS or n_ioRD,
+        n_reset => N_RESET,
+        dataIn => cpuDataOut,
+        dataOut => sdCardDataOut_sd,
+        regAddr => cpuAddress(2 downto 0),
+        driveLED => driveLED_sd,
+        clk => clk
+    );
+
+-- Add signal assignment outside port map:
+sdMISO_int <= sdMISO when sd_ctrl_sel = '0' else '1';
+
+    -- New image controller
+    img1 : entity work.image_controller
+    port map(
+        clk => clk,
+        n_reset => N_RESET,
+        n_rd => n_sdCardCS or n_ioRD,
+        n_wr => n_sdCardCS or n_ioWR,
+        dataIn => cpuDataOut,
+        dataOut => sdCardDataOut_img,
+        regAddr => cpuAddress(2 downto 0),
+        driveLED => driveLED_img
+    );
 
 usb : ch376s_module
 port map (
@@ -301,16 +323,22 @@ n_internalRam1CS <= not n_basRomCS; -- Full Internal RAM - 64 K
 -- ____________________________________________________________________________________
 -- BUS ISOLATION GOES HERE
 
-cpuDataIn <=
-interface1DataOut when n_interface1CS = '0' else
-interface2DataOut when n_interface2CS = '0' else
-ch376sDataOut when n_ch376sCS = '0' else
-sdCardDataOut when n_sdCardCS = '0' else
-basRomData when n_basRomCS = '0' else
-internalRam1DataOut when n_internalRam1CS= '0' else
-sramData when n_externalRamCS= '0' else
-x"FF";
+    -- Mux controller outputs based on selection
+    sdCardDataOut <= sdCardDataOut_img when sd_ctrl_sel = '1' else 
+                     sdCardDataOut_sd;
+                     
+    driveLED <= driveLED_img when sd_ctrl_sel = '1' else 
+                driveLED_sd;
 
+    -- CPU data input mux needs to be written like this:
+    cpuDataIn <= interface1DataOut when (n_interface1CS = '0') else
+                 interface2DataOut when (n_interface2CS = '0') else
+                 ch376sDataOut when (n_ch376sCS = '0') else
+                 sdCardDataOut when (n_sdCardCS = '0') else
+                 basRomData when (n_basRomCS = '0') else
+                 internalRam1DataOut when (n_internalRam1CS = '0') else
+                 sramData when (n_externalRamCS = '0') else
+                 x"FF";
 -- ____________________________________________________________________________________
 -- SYSTEM CLOCKS GO HERE
 
@@ -355,7 +383,7 @@ begin
 		-- 9600 201
 		-- 4800 101
 		-- 2400 50
-		serialClkCount <= serialClkCount + 2416;
+		serialClkCount <= serialClkCount + unsigned(baud_increment);
 	end if;
 end process;
 

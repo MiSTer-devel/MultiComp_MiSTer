@@ -33,7 +33,7 @@ entity bufferedUART is
 		txClock : in  std_logic; -- 16 x baud rate
 		rxd     : in  std_logic;
 		txd     : out std_logic;
-		n_rts   : out std_logic :='0';
+		n_rts   : out std_logic :='0'; -- start in ready to recieve state
 		n_cts   : in  std_logic; 
 		n_dcd   : in  std_logic
    );
@@ -70,7 +70,7 @@ signal txState : serialStateType;
 
 signal reset : std_logic := '0';
 
-type rxBuffArray is array (0 to 15) of std_logic_vector(7 downto 0);
+type rxBuffArray is array (0 to 63) of std_logic_vector(7 downto 0); -- 64 byte recieve buffer was 16 bytes
 signal rxBuffer : rxBuffArray;
 
 signal rxInPointer: integer range 0 to 63 :=0;
@@ -99,18 +99,18 @@ begin
 --	6850 implementatit = n_rts <= '1' when controlReg(6)='1' and controlReg(5)='0' else '0';
 
 	rxBuffCount <= 0 + rxInPointer - rxReadPointer when rxInPointer >= rxReadPointer
-		else 16 + rxInPointer - rxReadPointer;
+		else 64 + rxInPointer - rxReadPointer;
 
 	-- RTS with hysteresis
-	-- enable flow if less than 2 characters in buffer
-	-- stop flow if greater that 8 chars in buffer (to allow 8 byte overflow)
+	-- enable flow if less than 4 characters in buffer
+	-- stop flow if greater that 8 chars in buffer (to allow 32 byte overflow)
 	process (clk)
 	begin
 		if falling_edge(clk) then
-			if rxBuffCount<2 then
+			if rxBuffCount<4 then
 				n_rts <= '0';
 			end if;
-			if rxBuffCount>8 then
+			if rxBuffCount>32 then
 				n_rts <= '1';
 			end if;
 		end if;
@@ -162,7 +162,7 @@ begin
 			if regSel='1' then
 				dataOut <= rxBuffer(rxReadPointer);
 				if rxInPointer /= rxReadPointer then
-					if rxReadPointer < 15 then
+					if rxReadPointer < 63 then
 						rxReadPointer <= rxReadPointer+1;
 					else
 						rxReadPointer <= 0;
@@ -222,7 +222,7 @@ begin
 			when stopBit =>
 				if rxClockCount= 15 then
 					rxBuffer(rxInPointer) <= rxCurrentByteBuffer;
-					if rxInPointer < 15 then
+					if rxInPointer < 63 then
 						rxInPointer <= rxInPointer+1;
 					else
 						rxInPointer <= 0;

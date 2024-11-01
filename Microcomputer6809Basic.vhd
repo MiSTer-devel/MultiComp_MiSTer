@@ -22,6 +22,7 @@ entity Microcomputer6809Basic is
 	port(
 		N_RESET	   : in std_logic;
 		clk			: in std_logic;
+		baud_increment	: in std_logic_vector(15 downto 0);
 
 		sramData		: inout std_logic_vector(7 downto 0);
 		sramAddress	: out std_logic_vector(15 downto 0);
@@ -97,7 +98,7 @@ architecture struct of Microcomputer6809Basic is
 	signal n_interface2CS			: std_logic :='1';
 	signal n_sdCardCS					: std_logic :='1';
 
-	signal serialClkCount			: std_logic_vector(15 downto 0);
+   signal serialClkCount         : unsigned(15 downto 0);
 	signal cpuClkCount				: std_logic_vector(5 downto 0); 
 	signal sdClkCount					: std_logic_vector(5 downto 0); 	
 	signal cpuClock					: std_logic;
@@ -287,7 +288,7 @@ begin
 		-- 9600 201
 		-- 4800 101
 		-- 2400 50
-		serialClkCount <= serialClkCount + 2416;
+		serialClkCount <= serialClkCount + unsigned(baud_increment);
 	end if;
 end process;
 

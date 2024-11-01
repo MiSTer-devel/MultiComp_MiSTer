@@ -1,4 +1,4 @@
-MISTer MultiComp
+MiSTer MultiComp
 ================
 
 Port of Grant Searle's MultiComp to the MiSTer.
@@ -12,8 +12,11 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
 
 ### Connection Methods
 
-1. USB: Connect the console port from the MiSTer FPGA to your computer using a USB cable.
+1. USB: Connect the console port from the MiSTer FPGA to your computer using a USB cable.  
+
 2. Network: Use SSH to connect to the MiSTer FPGA if you have a Wireless or Ethernet connection.
+
+3. USB/Serial cable: For more information see the Serial Port section of the Altair8800_MiSTer repository:  <https://github.com/MiSTer-devel/Altair8800_MiSTer>
 
 ### Setting Up the Connection
 
@@ -23,7 +26,7 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
 
 #### For SSH with PuTTY
 
-- Connect to the ip address of your MISTer fpga.
+- Connect to the ip address of your MiSTer fpga.
 
 #### Linux command line to establish the connection to the core
 
@@ -49,7 +52,7 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
 ### Additional Information
 
 For more details on console connection, refer to the official MiSTer documentation:
-[MiSTer Console Connection Guide](https://mister-devel.github.io/MkDocs_MiSTer/advanced/console/)
+[MiSTer Console Connection Guide](https://MiSTer-devel.github.io/MkDocs_MiSTer/advanced/console/)
 
 ## The MiSTer OSD allows the access to four machines
 
@@ -103,7 +106,6 @@ Note that currently the `DOWNLOAD.COM` program is not working reliably (we hope 
 
 In the CPM-sd-image directory, you will find a zip file that contains a cmp.img file that can be copied to the /media/fat/games/MultipComp directory.  This file can be used to boot CP/M without the SD card.  It contains the structure for disks A thru P with A having the DOWNLOAD program and other utilities available.  Use this as a strating point to place CP/M applications on the image.  See the Installing Applications section at <http://searle.x10host.com/Multicomp/cpm/fpgaCPM.html#InstallingCPM>.  
 
-
 Note the process for this is mostly described in PART 2 - Using the Windows packager program.  The packager program is in windowsApp.  Again, this process requires the use of the tty terminal not the console, as you will be pasting the file data into the terminal.
 
 We have also added a zip file in the CPM-sd-image directory with a set of application pre installed.  See cpm-apps.zip.  This file can also be copied to the /media/fat/games/MultipComp directory and mounted.  It contains 5 drives A,C,D,E, and F where A still only has the DOWNLOAD program and the other drives contain the following.  The cpm.zip file contains just the basic utilities described in the  [CPM-sd-image](CPM-sd-image/README.MD)  directory.
@@ -119,15 +121,14 @@ We have also added a zip file in the CPM-sd-image directory with a set of applic
 | 6_SYSLIB        | 6_RCPM            | 6_ALGOLM         | 6_DWG_APPS      |
 | 7_BBC BASIC     | 7_DDTZ SOURCES    | 7_SUPERCALC      | 8_MICROSHELL    |
 
-
 Note the use of user numbers here i.e. 0_, 1_ etc..  
 (Not all the applications were tested to run, so you are on your own)
 
 The applications were obtained from the Obsolescence Guaranteed site.
 
-Included in the CPM-sd-image directory are also some python scripts to initialize/build the image for the CP/M disks.  Along with a script in the transient packages directory that can extract the .COM files from the package (note this was used to provide some content to build the cpm.img file provided in CPM-sd-image).
+Included in the CPM-sd-image directory are also some python scripts to initialize/build the image for the CP/M disks.  Along with a script in the transient packages directory that can extract the .COM files from the package (note this was used to provide some content to build the cpm.img file provided in CPM-sd-image directory).
 
-To use the Python scripts we recommend using Visual Studio Code and opening the MultiComp_MiSTer directory as its project location.
+To use the Python scripts we recommend using Visual Studio Code and opening the MultiComp_MiSTer directory as its project location.  Them just run the Python scripts from within Visual Studio Code.
 
 __Other useful links.__
 
@@ -139,6 +140,8 @@ After you have flashed the CP/M Demo Disk to the SD Card you will have to use th
 
 Using CP/M - from Grant Searle website:
 <http://searle.x10host.com/Multicomp/cpm/fpgaCPM.html>
+
+DeRamp - This website focuses on early personal computers from the mid 70s into the early 80s. Here you'll find resources for restoring and maintaining many of the great computers and peripherals from this era, in addition it has a Downloads section where you can find the bits for many applications. <https://deramp.com/>
 
 ### Z80 Basic
 
@@ -171,6 +174,51 @@ TROFF, EDIT, SGN, INT, ABS, USR, RND, SIN, PEEK, LEN, STR$, VAL, ASC, CHR$, LEFT
 LOG, SQR, HEX$, VARPTR, INSTR, STRING$, MID$ (MODIFICATION), POS
 
 <http://searle.x10host.com/Multicomp/#BASICKeywords>
+
+# MultiComp OSD Configuration
+
+This section describes the On-Screen Display menu configuration for the MultiComp system, providing control over CPU selection, storage, and communication parameters.
+
+## Menu Structure
+
+#### System Control
+
+- __Reset after Mount__: Configures system behavior after mounting storage
+- Options: No, Yes
+- __Reset__: System reset function
+
+#### CPU and ROM Configuration
+
+- __CPU-ROM Selection__:
+- Z80 with CP/M
+- Z80 with BASIC
+- 6502 with BASIC
+- 6809 with BASIC
+
+#### Communication Settings
+
+- __Baud Rate__:
+- 115200
+- 38400
+- 19200
+- 9600
+- 4800
+- 2400
+- __Serial Port__:
+- UART - use the MiSTer console port
+- USER_IO - use the MiSTer user I/O USB 3.1 port
+
+#### Storage Configuration
+
+- __Storage Controller__:
+- SD Controller - use the secondary SD card as storage
+- Image Controller - use this to access the cmp image from the games/Multicomp directory
+
+#### Additional Information
+
+The OSD includes version information and build date tracking. This configuration interface provides comprehensive control over the MultiComp's core functionality, allowing users to switch between different CPU architectures, operating systems, and I/O configurations.
+
+The menu system is designed for straightforward navigation and configuration of the MultiComp's essential features, making it accessible for both basic setup and advanced customization needs.
 
 ### License
 
