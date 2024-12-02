@@ -35,6 +35,7 @@ entity MicrocomputerZ80CPM is
 		rxd1			: in std_logic;
 		txd1			: out std_logic;
 		rts1			: out std_logic;
+		cts1			: in std_logic;  -- Added CTS input
 
 		rxd2			: in std_logic;
 		txd2			: out std_logic;
@@ -59,13 +60,13 @@ entity MicrocomputerZ80CPM is
 		sdMOSI			: out std_logic;
 		sdMISO			: in std_logic;
 		sdSCLK			: out std_logic;
+	    sd_ctrl_sel     : in std_logic;
 		driveLED		: out std_logic :='1';
 
 		usbCS			: out std_logic;
 		usbMOSI			: out std_logic;
 		usbMISO			: in std_logic;
-		usbSCLK			: out std_logic;
-	    sd_ctrl_sel     : in std_logic
+		usbSCLK			: out std_logic
 		);
 end MicrocomputerZ80CPM;
 
@@ -246,7 +247,7 @@ port map(
 	txClock => serialClock,
 	rxd => rxd1,
 	txd => txd1,
-	n_cts => '0',
+	n_cts => cts1,  -- Connect CTS signal
 	n_dcd => '0',
 	n_rts => rts1
 );
@@ -267,8 +268,8 @@ port map(
         clk => clk
     );
 
--- Add signal assignment outside port map:
-sdMISO_int <= sdMISO when sd_ctrl_sel = '0' else '1';
+    -- Add signal assignment outside port map:
+    sdMISO_int <= sdMISO when sd_ctrl_sel = '0' else '1';
 
     -- New image controller
     img1 : entity work.image_controller
@@ -357,7 +358,7 @@ begin
 			cpuClkCount <= (others=>'0');
 		end if;
 		
-		if cpuClkCount < 4 then -- 2 when 10MHz, 2 when 12.5MHz, 2 when 16.6MHz, 1 when 25MHz
+		if cpuClkCount < 2 then -- 2 when 10MHz, 2 when 12.5MHz, 2 when 16.6MHz, 1 when 25MHz
 			cpuClock <= '0';
 		else
 			cpuClock <= '1';

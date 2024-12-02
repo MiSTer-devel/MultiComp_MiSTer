@@ -35,6 +35,7 @@ entity Microcomputer6809Basic is
 		rxd1			: in std_logic;
 		txd1			: out std_logic;
 		rts1			: out std_logic;
+		cts1			: in std_logic;  -- Added CTS input
 
 		rxd2			: in std_logic;
 		txd2			: out std_logic;
@@ -59,6 +60,7 @@ entity Microcomputer6809Basic is
 		sdMOSI		: out std_logic;
 		sdMISO		: in std_logic;
 		sdSCLK		: out std_logic;
+		sd_ctrl_sel : in std_logic;
 		driveLED		: out std_logic :='1'	
 	);
 end Microcomputer6809Basic;
@@ -98,7 +100,12 @@ architecture struct of Microcomputer6809Basic is
 	signal n_interface2CS			: std_logic :='1';
 	signal n_sdCardCS					: std_logic :='1';
 
-   signal serialClkCount         : unsigned(15 downto 0);
+    signal sdCardDataOut_sd  : std_logic_vector(7 downto 0);
+    signal sdCardDataOut_img : std_logic_vector(7 downto 0);
+    signal driveLED_sd, driveLED_img : std_logic;
+    signal sdMISO_int : std_logic;  -- Add this signal declaration
+
+    signal serialClkCount         : unsigned(15 downto 0);
 	signal cpuClkCount				: std_logic_vector(5 downto 0); 
 	signal sdClkCount					: std_logic_vector(5 downto 0); 	
 	signal cpuClock					: std_logic;
@@ -196,7 +203,7 @@ port map(
 	txClock => serialClock,
 	rxd => rxd1,
 	txd => txd1,
-	n_cts => '0',
+	n_cts => cts1,  -- Connect CTS signal
 	n_dcd => '0',
 	n_rts => rts1
 );
@@ -205,17 +212,33 @@ sd1 : entity work.sd_controller
 port map(
 	sdCS => sdCS,
 	sdMOSI => sdMOSI,
-	sdMISO => sdMISO,
+	sdMISO => sdMISO_int,
 	sdSCLK => sdSCLK,
 	n_wr => n_sdCardCS or cpuClock or n_WR,
 	n_rd => n_sdCardCS or cpuClock or (not n_WR),
 	n_reset => n_reset,
 	dataIn => cpuDataOut,
-	dataOut => sdCardDataOut,
+	dataOut => sdCardDataOut_sd,
 	regAddr => cpuAddress(2 downto 0),
-	driveLED => driveLED,
+	driveLED => driveLED_sd,
 	clk => sdClock -- twice the spi clk
 );
+
+    -- Add signal assignment outside port map:
+    sdMISO_int <= sdMISO when sd_ctrl_sel = '0' else '1';
+
+    -- New image controller
+    img1 : entity work.image_controller
+    port map(
+        clk => clk,
+        n_reset => N_RESET,
+        n_rd => n_sdCardCS or n_ioRD,
+        n_wr => n_sdCardCS or n_ioWR,
+        dataIn => cpuDataOut,
+        dataOut => sdCardDataOut_img,
+        regAddr => cpuAddress(2 downto 0),
+        driveLED => driveLED_img
+    );
 
 -- ____________________________________________________________________________________
 -- MEMORY READ/WRITE LOGIC GOES HERE
@@ -226,7 +249,6 @@ n_memWR <= not(cpuClock) nand (not n_WR);
 -- ____________________________________________________________________________________
 -- CHIP SELECTS GO HERE
 
-
 n_basRomCS <= '0' when cpuAddress(15 downto 13) = "111" else '1'; --8K at top of memory
 n_interface1CS <= '0' when cpuAddress(15 downto 1) = "111111111101000" else '1'; -- 2 bytes FFD0-FFD1
 n_interface2CS <= '0' when cpuAddress(15 downto 1) = "111111111101001" else '1'; -- 2 bytes FFD2-FFD3
@@ -235,6 +257,13 @@ n_internalRam1CS <= not n_basRomCS; -- Full Internal RAM - 64 K
 
 -- ____________________________________________________________________________________
 -- BUS ISOLATION GOES HERE
+    -- Mux controller outputs based on selection
+    sdCardDataOut <= sdCardDataOut_img when sd_ctrl_sel = '1' else 
+                     sdCardDataOut_sd;
+                     
+    driveLED <= driveLED_img when sd_ctrl_sel = '1' else 
+                driveLED_sd;
+
 
 cpuDataIn <=
 interface1DataOut when n_interface1CS = '0' else
@@ -247,7 +276,6 @@ x"FF";
 
 -- ____________________________________________________________________________________
 -- SYSTEM CLOCKS GO HERE
-
 
 -- SUB-CIRCUIT CLOCK SIGNALS
 

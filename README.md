@@ -24,6 +24,34 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
 
 - Connect at 115200 baud, 8 bits, no parity to the COM port.
 
+#### USB to serial cable connection
+
+##### User Port - extra USB 3.1A style connector on MiSTer
+
+| USB  |  P7 |  Name  | PIN  |   Mister | emu wire |
+|---|---|---|---|---|---|
+|1  |  +5V |   +5V|
+|2  |  2  |  TX   | SDA  |  AH9   | USER_IO[1] |
+|3  |  1    |RX   | SCL   | AG11   | USER_IO[0] |
+|4  |  GND   | GND|
+|5  |  8   | DSR  |  IO10  |  AF15  |  USER_IO[5]|
+|6  |  7   | DTR  |  IO11  | AG16   | USER_IO[4]|
+|7  |  6   | CTS  |  IO12  |  AH11  |  USER_IO[3]|
+|8  |  5   | RTS  |  IO13  |  AH12  |  USER_IO[2]|
+|9  |  10  |  IO6 |   IO8  |  AF17  |  USER_IO[6]|
+|10 |   Shield |   Shield |
+
+##### FT232 USB to serial cable
+
+|wire |name | mister usb IO port|
+|---|---|---|
+| Red|5V|N/C|
+| Black|GND|GND|
+| White|RXD|2|
+| Green|TXD|3|
+| Yellow|RTS|7|
+| Blue|CTS|8|
+
 #### For SSH with PuTTY
 
 - Connect to the ip address of your MiSTer fpga.
@@ -34,7 +62,7 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
    - Usually mapped to `/dev/ttyS1` or `/dev/ttyUSB0`
    - Use this command to help identify the correct device:
 
-     ```
+     ``` bash
      dmesg | grep tty
      ```
 
@@ -42,12 +70,22 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
    - Use `screen` or `minicom`
    - Example command with `screen`:
 
-     ```
+     ``` bash
      screen /dev/ttyS1 115200
      ```
 
    - Replace `/dev/ttyS1` with the correct device identifier
    - Change 115200 to the appropriate baud rate if different
+
+3. Enable Flow Control:
+   - Use `stty`
+
+     ``` bash
+     stty -F /dev/ttyS1 crtscts
+     ```
+
+   - Replace `/dev/ttyS1` with the correct device identifier
+   - This is done before the screen command
 
 ### Additional Information
 
@@ -181,13 +219,13 @@ This section describes the On-Screen Display menu configuration for the MultiCom
 
 ## Menu Structure
 
-#### System Control
+### System Control
 
-- __Reset after Mount__: Configures system behavior after mounting storage
-- Options: No, Yes
+- __Mount *.IMG__: Provide the image in the games/Multicomp directory
+- __Reset after Mount__: Configures system behavior after mounting storage - Options: No, Yes
 - __Reset__: System reset function
 
-#### CPU and ROM Configuration
+### CPU and ROM Configuration
 
 - __CPU-ROM Selection__:
 - Z80 with CP/M
@@ -195,7 +233,7 @@ This section describes the On-Screen Display menu configuration for the MultiCom
 - 6502 with BASIC
 - 6809 with BASIC
 
-#### Communication Settings
+### Communication Settings
 
 - __Baud Rate__:
 - 115200
@@ -205,20 +243,53 @@ This section describes the On-Screen Display menu configuration for the MultiCom
 - 4800
 - 2400
 - __Serial Port__:
-- UART - use the MiSTer console port
-- USER_IO - use the MiSTer user I/O USB 3.1 port
+- Console Port - use the MiSTer console port
+- User IO Port - use the MiSTer user I/O USB 3.1 port
+- __Flow Control__:
+- None - no hardware flow control
+- RTS/CTS - enable hardware flow control using RTS/CTS signals
 
-#### Storage Configuration
+### Storage Configuration
 
 - __Storage Controller__:
-- SD Controller - use the secondary SD card as storage
-- Image Controller - use this to access the cmp image from the games/Multicomp directory
+- SD Controller - select the secondary SD card as storage
+- Image Controller - select this to access the cpm image from the games/Multicomp directory
+- __Storage Images__: Allows mounting disk images (.IMG files)
 
-#### Additional Information
-
+### Additional Information
 The OSD includes version information and build date tracking. This configuration interface provides comprehensive control over the MultiComp's core functionality, allowing users to switch between different CPU architectures, operating systems, and I/O configurations.
 
 The menu system is designed for straightforward navigation and configuration of the MultiComp's essential features, making it accessible for both basic setup and advanced customization needs.
+
+## Troubleshooting
+
+### Serial Communication Issues
+
+- If no response when typing:
+- Verify correct baud rate is selected
+- Check that the correct serial port is selected (Console vs User IO)
+- Try enabling/disabling flow control
+- For User IO port, verify cable connections match pinout documentation
+
+### Storage Issues
+
+- If unable to access CP/M:
+- When using SD Controller, verify SD card is properly formatted
+- When using Image Controller, ensure .IMG file is in the correct directory (/media/fat/games/MultiComp)
+- Try toggling "Reset after Mount" option
+
+### System Stability
+
+- 6809 Basic has known reset issues (inherited from original design)
+- If system becomes unresponsive:
+- Use OSD Reset function
+- Try power cycling the MiSTer
+- Verify correct CPU-ROM selection for your intended use
+
+### Known Limitations
+
+- If the DOWNLOAD\.COM program has reliability issues in CP/M use a slower baud rate, we have had some sucess at 2400 and 9600 baud, 115200 baud seems to consistantly drop characters even with flow control enabled
+- 6502 and 6809 Basic variants do not support SD card operations (no CSAVE/CLOAD)\
 
 ### License
 
@@ -241,6 +312,128 @@ Grant Searle
 
 [Grant's MULTICOMP pick and mix computer](http://searle.x10host.com/Multicomp/)
 
-### Note
+# MiSTer MultiComp BASIC Keywords Reference
 
-The 6809 Basic is not resetting  properly. This issue is present in the original Grant Searle's MultiComp project
+## Keywords by Category
+
+### Mathematical Functions
+
+| Keyword | Z80 | 6502 | 6809 | Description | Usage Example |
+|---------|-----|------|------|-------------|---------------|
+| ABS | ✓ | ✓ | ✓ | Returns absolute value | `X = ABS(-5)` |
+| ATN | ✓ | ✓ | ✓ | Returns arctangent | `A = ATN(1)` |
+| COS | ✓ | ✓ | ✓ | Returns cosine | `C = COS(3.14159/2)` |
+| EXP | ✓ | ✓ | ✓ | Returns e raised to power | `E = EXP(2)` |
+| FIX | - | - | ✓ | Truncates decimal portion | `F = FIX(3.7)` |
+| INT | ✓ | ✓ | ✓ | Returns integer portion | `I = INT(5.7)` |
+| LOG | ✓ | ✓ | ✓ | Returns natural logarithm | `L = LOG(100)` |
+| SGN | ✓ | ✓ | ✓ | Returns sign of number (-1,0,1) | `S = SGN(-42)` |
+| SIN | ✓ | ✓ | ✓ | Returns sine | `S = SIN(3.14159/2)` |
+| SQR | ✓ | ✓ | ✓ | Returns square root | `R = SQR(16)` |
+| TAN | ✓ | ✓ | ✓ | Returns tangent | `T = TAN(0.785)` |
+
+### String Functions
+
+| Keyword | Z80 | 6502 | 6809 | Description | Usage Example |
+|---------|-----|------|------|-------------|---------------|
+| ASC | ✓ | ✓ | ✓ | Returns ASCII value of character | `A = ASC("A")` |
+| CHR$ | ✓ | ✓ | ✓ | Returns character for ASCII value | `C$ = CHR$(65)` |
+| INSTR | - | - | ✓ | Searches for substring | `I = INSTR(A$, "FIND")` |
+| LEFT$ | ✓ | ✓ | ✓ | Returns leftmost characters | `L$ = LEFT$("HELLO", 2)` |
+| LEN | ✓ | ✓ | ✓ | Returns string length | `L = LEN("TEST")` |
+| MID$ | ✓ | ✓ | ✓ | Returns substring | `M$ = MID$("HELLO", 2, 2)` |
+| RIGHT$ | ✓ | ✓ | ✓ | Returns rightmost characters | `R$ = RIGHT$("WORLD", 3)` |
+| STR$ | ✓ | ✓ | ✓ | Converts number to string | `S$ = STR$(123)` |
+| STRING$ | - | - | ✓ | Creates string of repeated characters | `S$ = STRING$(5, "*")` |
+| VAL | ✓ | ✓ | ✓ | Converts string to number | `V = VAL("123")` |
+
+### Program Control
+
+| Keyword | Z80 | 6502 | 6809 | Description | Usage Example |
+|---------|-----|------|------|-------------|---------------|
+| CONT | ✓ | ✓ | ✓ | Continues program execution | `CONT` |
+| END | ✓ | ✓ | ✓ | Ends program | `END` |
+| FOR/NEXT | ✓ | ✓ | ✓ | Loop structure | `FOR I=1 TO 10 : PRINT I : NEXT I` |
+| GOSUB | ✓ | ✓ | ✓ | Calls subroutine | `GOSUB 1000` |
+| GOTO | ✓ | ✓ | ✓ | Jumps to line number | `GOTO 100` |
+| IF/THEN | ✓ | ✓ | ✓ | Conditional execution | `IF X=5 THEN PRINT "YES"` |
+| ON GOSUB | - | - | ✓ | Multiple branch subroutine | `ON X GOSUB 100,200,300` |
+| ON GOTO | - | - | ✓ | Multiple branch jump | `ON X GOTO 100,200,300` |
+| RETURN | ✓ | ✓ | ✓ | Returns from subroutine | `RETURN` |
+| STOP | ✓ | ✓ | ✓ | Halts program execution | `STOP` |
+
+### Data and Variables
+
+| Keyword | Z80 | 6502 | 6809 | Description | Usage Example |
+|---------|-----|------|------|-------------|---------------|
+| DATA | ✓ | ✓ | ✓ | Stores program data | `DATA 100,200,"TEXT"` |
+| DEF FN | ✓ | ✓ | ✓ | Defines function | `DEF FNA(X)=X*X+2` |
+| DIM | ✓ | ✓ | ✓ | Declares array dimensions | `DIM A(10),B$(20)` |
+| INPUT | ✓ | ✓ | ✓ | Accepts user input | `INPUT "Name?";N$` |
+| LET | ✓ | ✓ | ✓ | Assigns variable value | `LET A=5` or `A=5` |
+| LINE INPUT | - | - | ✓ | Inputs entire line | `LINE INPUT "Text?";A$` |
+| READ | ✓ | ✓ | ✓ | Reads DATA values | `READ A,B,C$` |
+| RESTORE | ✓ | ✓ | ✓ | Resets DATA pointer | `RESTORE` |
+
+### System and Memory
+
+| Keyword | Z80 | 6502 | 6809 | Description | Usage Example |
+|---------|-----|------|------|-------------|---------------|
+| DEEK | ✓ | - | - | Reads word from memory | `D = DEEK(16384)` |
+| DOKE | ✓ | - | - | Writes word to memory | `DOKE 16384,12345` |
+| FRE | ✓ | ✓ | - | Returns free memory | `F = FRE(0)` |
+| INP | ✓ | - | - | Reads from I/O port | `I = INP(255)` |
+| MEM | - | - | ✓ | Returns memory size | `M = MEM` |
+| OUT | ✓ | - | - | Writes to I/O port | `OUT 255,10` |
+| PEEK | ✓ | ✓ | ✓ | Reads byte from memory | `P = PEEK(16384)` |
+| POKE | ✓ | ✓ | ✓ | Writes byte to memory | `POKE 16384,255` |
+| USR | ✓ | ✓ | ✓ | Calls machine language routine | `U = USR(32768)` |
+| VARPTR | - | - | ✓ | Returns variable address | `V = VARPTR(A)` |
+
+### Program Editing
+
+| Keyword | Z80 | 6502 | 6809 | Description | Usage Example |
+|---------|-----|------|------|-------------|---------------|
+| CLEAR | ✓ | ✓ | ✓ | Clears variables | `CLEAR` |
+| CLS | ✓ | - | - | Clears screen | `CLS` |
+| DEL | - | - | ✓ | Deletes program lines | `DEL 100-200` |
+| EDIT | - | - | ✓ | Edits program line | `EDIT 100` |
+| LIST | ✓ | ✓ | ✓ | Lists program | `LIST` or `LIST 100-200` |
+| NEW | ✓ | ✓ | ✓ | Clears program | `NEW` |
+| RENUM | - | - | ✓ | Renumbers program lines | `RENUM 100,10` |
+| RUN | ✓ | ✓ | ✓ | Executes program | `RUN` or `RUN 100` |
+| TRON/TROFF | - | - | ✓ | Trace mode on/off | `TRON` or `TROFF` |
+
+### Z80 BASIC Specific Extensions (v4.7b)
+
+| Keyword | Description | Usage Example |
+|---------|-------------|---------------|
+| HEX$(nn) | Converts signed integer to hex string | `H$ = HEX$(255)` |
+| BIN$(nn) | Converts signed integer to binary string | `B$ = BIN$(15)` |
+| &Hnn | Interprets nn as hexadecimal value | `X = &H1F` |
+| &Bnn | Interprets nn as binary value | `Y = &B1010` |
+
+### Operators
+
+| Operator | Z80 | 6502 | 6809 | Description | Usage Example |
+|----------|-----|------|------|-------------|---------------|
+| + | ✓ | ✓ | ✓ | Addition | `A = B + C` |
+| - | ✓ | ✓ | ✓ | Subtraction | `X = Y - Z` |
+| * | ✓ | ✓ | ✓ | Multiplication | `P = Q * R` |
+| / | ✓ | ✓ | ✓ | Division | `D = N / 2` |
+| ^ | ✓ | ✓ | ✓ | Exponentiation | `E = 2 ^ 3` |
+| AND | ✓ | ✓ | ✓ | Logical AND | `IF A>0 AND B<10 THEN...` |
+| OR | ✓ | ✓ | ✓ | Logical OR | `IF X=0 OR Y=0 THEN...` |
+| NOT | ✓ | ✓ | ✓ | Logical NOT | `IF NOT A THEN...` |
+| > | ✓ | ✓ | ✓ | Greater than | `IF X > 10 THEN...` |
+| < | ✓ | ✓ | ✓ | Less than | `IF Y < 5 THEN...` |
+| = | ✓ | ✓ | ✓ | Equal to | `IF A = B THEN...` |
+| & | - | - | ✓ | Bitwise AND | `R = X & Y` |
+
+Notes:
+1. Z80 BASIC is the most commonly used version for CP/M systems
+2. 6502 BASIC is a Microsoft BASIC variant
+3. 6809 BASIC has the most extensive command set but lacks storage commands
+4. None of the 6502 and 6809 variants support CSAVE/CLOAD operations
+
+Each example shows the most common usage pattern for the command. Many commands have additional optional parameters or alternate syntaxes not shown in these basic examples.

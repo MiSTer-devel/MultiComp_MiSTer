@@ -16,33 +16,33 @@
 -- eMail address available on my main web page link above.
 
 library ieee;
-	use ieee.std_logic_1164.all;
-	use ieee.numeric_std.all;
-	use ieee.std_logic_unsigned.all;
+    use ieee.std_logic_1164.all;
+    use ieee.numeric_std.all;
+    use ieee.std_logic_unsigned.all;
 
 entity bufferedUART is
-	port (
-		clk     : in std_logic;
-		n_wr    : in  std_logic;
-		n_rd    : in  std_logic;
-		regSel  : in  std_logic;
-		dataIn  : in  std_logic_vector(7 downto 0);
-		dataOut : out std_logic_vector(7 downto 0);
-		n_int   : out std_logic; 
-		rxClock : in  std_logic; -- 16 x baud rate
-		txClock : in  std_logic; -- 16 x baud rate
-		rxd     : in  std_logic;
-		txd     : out std_logic;
+    port (
+        clk     : in std_logic;
+        n_wr    : in  std_logic;
+        n_rd    : in  std_logic;
+        regSel  : in  std_logic;
+        dataIn  : in  std_logic_vector(7 downto 0);
+        dataOut : out std_logic_vector(7 downto 0);
+        n_int   : out std_logic; 
+        rxClock : in  std_logic; -- 16 x baud rate
+        txClock : in  std_logic; -- 16 x baud rate
+        rxd     : in  std_logic;
+        txd     : out std_logic;
 		n_rts   : out std_logic :='0'; -- start in ready to recieve state
-		n_cts   : in  std_logic; 
-		n_dcd   : in  std_logic
-   );
+        n_cts   : in  std_logic;
+        n_dcd   : in  std_logic
+    );
 end bufferedUART;
 
 architecture rtl of bufferedUART is
 
 signal n_int_internal   : std_logic := '1';
-signal statusReg : std_logic_vector(7 downto 0) := (others => '0'); 
+signal statusReg : std_logic_vector(7 downto 0) := (others => '0');
 signal controlReg : std_logic_vector(7 downto 0) := "00000000";
  
 signal rxBitCount: std_logic_vector(3 DOWNTO 0); 
@@ -76,8 +76,9 @@ signal rxBuffer : rxBuffArray;
 signal rxInPointer: integer range 0 to 63 :=0;
 signal rxReadPointer: integer range 0 to 63 :=0;
 signal rxBuffCount: integer range 0 to 63 :=0;
+signal next_rxInPointer: integer range 0 to 63;
 
-signal rxFilter : integer range 0 to 50; 
+signal rxFilter : integer range 0 to 50;
 
 signal rxdFiltered : std_logic := '1';
 
@@ -85,37 +86,38 @@ begin
 	-- minimal 6850 compatibility
 	statusReg(0) <= '0' when rxInPointer=rxReadPointer else '1';
 	statusReg(1) <= '1' when txByteWritten=txByteSent else '0';
-	statusReg(2) <= n_dcd;
-	statusReg(3) <= n_cts;
-	statusReg(7) <= not(n_int_internal);
-	  
+    statusReg(2) <= n_dcd;
+    statusReg(3) <= n_cts;
+    statusReg(7) <= not(n_int_internal);
+
 	-- interrupt mask
-	n_int <= n_int_internal;
-	n_int_internal <= '0' when (rxInPointer /= rxReadPointer) and controlReg(7)='1'
-	         else '0' when (txByteWritten=txByteSent) and controlReg(6)='0' and controlReg(5)='1'
-				else '1';
+    n_int <= n_int_internal;
+    n_int_internal <= '0' when (rxInPointer /= rxReadPointer) and controlReg(7)='1'
+            else '0' when (txByteWritten=txByteSent) and controlReg(6)='0' and controlReg(5)='1'
+            else '1';
 
 -- raise (inhibit) n_rts when buffer over half-full
 --	6850 implementatit = n_rts <= '1' when controlReg(6)='1' and controlReg(5)='0' else '0';
 
-	rxBuffCount <= 0 + rxInPointer - rxReadPointer when rxInPointer >= rxReadPointer
-		else 64 + rxInPointer - rxReadPointer;
+    rxBuffCount <= 0 + rxInPointer - rxReadPointer when rxInPointer >= rxReadPointer
+        else 64 + rxInPointer - rxReadPointer;
+        
+    next_rxInPointer <= 0 when rxInPointer = 63 else rxInPointer + 1;
 
 	-- RTS with hysteresis
 	-- enable flow if less than 4 characters in buffer
 	-- stop flow if greater that 8 chars in buffer (to allow 32 byte overflow)
-	process (clk)
-	begin
-		if falling_edge(clk) then
-			if rxBuffCount<4 then
-				n_rts <= '0';
-			end if;
-			if rxBuffCount>32 then
-				n_rts <= '1';
-			end if;
-		end if;
-	end process;
-		
+    process (clk)
+    begin
+        if falling_edge(clk) then
+            if rxBuffCount < 4 then
+                n_rts <= '0';
+            elsif rxBuffCount > 8 then
+                n_rts <= '1';
+            end if;
+        end if;
+    end process;
+    
 --	n_rts <= '1' when rxBuffCount > 24 else '0';
 	
 	-- control reg
@@ -130,7 +132,7 @@ begin
    --            always 0 (no parity)    n/a        n/a
 	
 	-- write of xxxxxx11 to control reg will reset
-	reset <= '1' when n_wr = '0' and dataIn(1 downto 0) = "11" and regSel = '0' else '0';
+    reset <= '1' when n_wr = '0' and dataIn(1 downto 0) = "11" and regSel = '0' else '0';
 
 
 	-- RX de-glitcher - important because the FPGA is very sensistive
@@ -138,65 +140,65 @@ begin
 	-- hysteresis will then not switch high to low until there is 50 more low samples than highs.
 	-- Introduces a minor (1uS) delay with 50MHz clock
 	-- However, then makes serial comms 100% reliable
-	process (clk)
-	begin
-		if falling_edge(clk) then
+    process (clk)
+    begin
+        if falling_edge(clk) then
 			if rxd = '1' and rxFilter=50 then
-				rxdFiltered <= '1';
-			end if;
-			if rxd = '1' and rxFilter /= 50 then
+                rxdFiltered <= '1';
+            end if;
+            if rxd = '1' and rxFilter /= 50 then
 				rxFilter <= rxFilter+1;
-			end if;
+            end if;
 			if rxd = '0' and rxFilter=0 then
-				rxdFiltered <= '0';
-			end if;
+                rxdFiltered <= '0';
+            end if;
 			if rxd = '0' and rxFilter/=0 then
 				rxFilter <= rxFilter-1;
-			end if;
-		end if;
-	end process;
-	
+            end if;
+        end if;
+    end process;
+    
 	process( n_rd )
-	begin
+    begin
 		if falling_edge(n_rd) then -- Standard CPU - present data on leading edge of rd
 			if regSel='1' then
-				dataOut <= rxBuffer(rxReadPointer);
-				if rxInPointer /= rxReadPointer then
-					if rxReadPointer < 63 then
+                dataOut <= rxBuffer(rxReadPointer);
+                if rxInPointer /= rxReadPointer then
+                    if rxReadPointer < 63 then
 						rxReadPointer <= rxReadPointer+1;
-					else
-						rxReadPointer <= 0;
-					end if;
-				end if;
-			else
-				dataOut <= statusReg;
-			end if;
-		end if;
-	end process;
+                    else
+                        rxReadPointer <= 0;
+                    end if;
+                end if;
+            else
+                dataOut <= statusReg;
+            end if;
+        end if;
+    end process;
 
 	process( n_wr )
-	begin
+    begin
 		if rising_edge(n_wr) then -- Standard CPU - capture data on trailing edge of wr
 			if regSel='1' then
 				if txByteWritten=txByteSent then
-					txByteWritten <= not txByteWritten;
-				end if;
-				txByteLatch <= dataIn;
-			else
-				controlReg <= dataIn;
-			end if;
-		end if;
-	end process;
+                    txByteWritten <= not txByteWritten;
+                end if;
+                txByteLatch <= dataIn;
+            else
+                controlReg <= dataIn;
+            end if;
+        end if;
+    end process;
 
 	process( rxClock , reset )
-	begin
+    begin
 		if reset='1' then
-			rxState <= idle;
+            rxState <= idle;
 			rxBitCount<=(others=>'0');
 			rxClockCount<=(others=>'0');
-		elsif falling_edge(rxClock) then
-			case rxState is
-			when idle =>
+        elsif falling_edge(rxClock) then
+            case rxState is
+            when idle =>
 				if rxdFiltered='1' then -- high so idle
 					rxBitCount<=(others=>'0');
 					rxClockCount<=(others=>'0');
@@ -204,79 +206,77 @@ begin
 					if rxClockCount= 7 then -- wait to half way through bit
 						rxClockCount<=(others=>'0');
 						rxState <=dataBit;
-					else
+                    else
 						rxClockCount<=rxClockCount+1;
-					end if;
-				end if;
-			when dataBit =>
+                    end if;
+                end if;
+            when dataBit =>
 				if rxClockCount= 15 then -- 1 bit later - sample
 					rxClockCount<=(others=>'0');
 					rxBitCount <=rxBitCount+1;
-					rxCurrentByteBuffer <= rxdFiltered & rxCurrentByteBuffer(7 downto 1);
+                    rxCurrentByteBuffer <= rxdFiltered & rxCurrentByteBuffer(7 downto 1);
 					if rxBitCount= 7 then -- 8 bits read - handle stop bit
 						rxState<=stopBit;
-				end if;
-				else
+                    end if;
+                else
 					rxClockCount<=rxClockCount+1;
-				end if;
-			when stopBit =>
-				if rxClockCount= 15 then
-					rxBuffer(rxInPointer) <= rxCurrentByteBuffer;
-					if rxInPointer < 63 then
-						rxInPointer <= rxInPointer+1;
-					else
-						rxInPointer <= 0;
-					end if;
-					rxClockCount<=(others=>'0');
-					rxState <=idle;
-				else
-					rxClockCount<=rxClockCount+1;
-				end if;
-			end case;
-		end if;              
-	end process;
+                end if;
+            when stopBit =>
+                if rxClockCount= 15 then
+                    if next_rxInPointer /= rxReadPointer then  -- Only write if buffer not full
+                        rxBuffer(rxInPointer) <= rxCurrentByteBuffer;
+                        rxInPointer <= next_rxInPointer;
+                    end if;
+                    rxClockCount<=(others=>'0');
+                    rxState <=idle;
+                else
+                    rxClockCount<=rxClockCount+1;
+                end if;
+            end case;
+        end if;              
+    end process;
 
 	process( txClock , reset )
-	begin
+    begin
 		if reset='1' then
-			txState <= idle;
+            txState <= idle;
 			txBitCount<=(others=>'0');
 			txClockCount<=(others=>'0');
-			txByteSent <= '0';
+            txByteSent <= '0';
 
-		elsif falling_edge(txClock) then
-			case txState is
-			when idle =>
-				txd <= '1';
+        elsif falling_edge(txClock) then
+            case txState is
+            when idle =>
+                txd <= '1';
 				if (txByteWritten /= txByteSent) and n_cts='0' and n_dcd='0' then
-					txBuffer <= txByteLatch;
-					txByteSent <= not txByteSent;
+                    txBuffer <= txByteLatch;
+                    txByteSent <= not txByteSent;
 					txState <=dataBit;
 					txd <= '0'; -- start bit
 					txBitCount<=(others=>'0');
 					txClockCount<=(others=>'0');
-				end if;
-			when dataBit =>
+                end if;
+            when dataBit =>
 				if txClockCount= 15 then -- 1 bit later
 					txClockCount<=(others=>'0');
 					if txBitCount= 8 then -- 8 bits read - handle stop bit
-						txd <= '1';
+                        txd <= '1';
 						txState<=stopBit;
-					else
-						txd <= txBuffer(0);
-						txBuffer <= '0' & txBuffer(7 downto 1); 
+                    else
+                        txd <= txBuffer(0);
+                        txBuffer <= '0' & txBuffer(7 downto 1);
 						txBitCount <=txBitCount+1;
-					end if;
-				else
+                    end if;
+                else
 					txClockCount<=txClockCount+1;
-				end if;
-			when stopBit =>
+                end if;
+            when stopBit =>
 				if txClockCount= 15 then
 					txState <=idle;
-				else
+                else
 					txClockCount<=txClockCount+1;
-				end if;
-			end case;
-		end if;              
-	end process;
+                end if;
+            end case;
+        end if;              
+    end process;
  end rtl;
