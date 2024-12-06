@@ -1,3 +1,4 @@
+tasm -80 source\mon.asm hexFiles\intMon.hex
 tasm -80 source\basMon.asm hexFiles\basMon.hex
 tasm -80 source\cbios128.asm hexFiles\cbios128.hex
 tasm -80 source\cpm22.asm hexFiles\cpm22.hex

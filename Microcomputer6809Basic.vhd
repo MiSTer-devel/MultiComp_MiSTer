@@ -67,6 +67,9 @@ end Microcomputer6809Basic;
 
 architecture struct of Microcomputer6809Basic is
 
+    signal reset_counter : unsigned(15 downto 0) := (others => '0');
+    signal reset_n_internal : std_logic := '0';  -- Active low internal reset
+
 	signal n_WR							: std_logic;
 	signal n_RD							: std_logic;
 	signal cpuAddress					: std_logic_vector(15 downto 0);
@@ -114,13 +117,30 @@ architecture struct of Microcomputer6809Basic is
 
 begin
 
+process(cpuClock)  -- Use cpuClock instead of clk
+begin
+  if falling_edge(cpuClock) then  -- Match CPU's falling edge trigger
+    if N_RESET = '0' then
+      reset_counter <= (others => '0');
+      reset_n_internal <= '0'; 
+    else
+      if reset_counter /= unsigned'(X"FFFF") then
+        reset_counter <= reset_counter + 1;
+        reset_n_internal <= '0';
+      else
+        reset_n_internal <= '1';
+      end if;
+    end if;
+  end if;
+end process;
+
 -- ____________________________________________________________________________________
 -- CPU CHOICE GOES HERE
 
 cpu1 : entity work.cpu09
 port map(
 	clk => not(cpuClock),
-	rst => not N_RESET,
+	rst => not(reset_n_internal),
 	rw => n_WR,
 	addr => cpuAddress,
 	data_in => cpuDataIn,
@@ -160,7 +180,7 @@ port map
 
 io1 : entity work.SBCTextDisplayRGB
 port map (
-	n_reset => N_RESET,
+	n_reset => reset_n_internal,
 	clk => clk,
 
 	-- RGB video signals
@@ -216,7 +236,7 @@ port map(
 	sdSCLK => sdSCLK,
 	n_wr => n_sdCardCS or cpuClock or n_WR,
 	n_rd => n_sdCardCS or cpuClock or (not n_WR),
-	n_reset => n_reset,
+	n_reset => reset_n_internal,
 	dataIn => cpuDataOut,
 	dataOut => sdCardDataOut_sd,
 	regAddr => cpuAddress(2 downto 0),
@@ -231,7 +251,7 @@ port map(
     img1 : entity work.image_controller
     port map(
         clk => clk,
-        n_reset => N_RESET,
+        n_reset => reset_n_internal,
         n_rd => n_sdCardCS or n_ioRD,
         n_wr => n_sdCardCS or n_ioWR,
         dataIn => cpuDataOut,

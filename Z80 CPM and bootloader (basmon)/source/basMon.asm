@@ -69,7 +69,6 @@ SD_LBA2		.EQU	08CH
 primaryIO	.ds	1
 secNo		.ds	1
 dmaAddr		.ds	2
-InitTxtB        .ds     2
 
 lba0		.DB	00h
 lba1		.DB	00h
@@ -170,25 +169,6 @@ conoutB1:	CALL	CKACIA1		; See if ACIA channel B is finished transmitting
 		RET
 
 ;------------------------------------------------------------------------------
-; Non blocking console output routine
-; On return Z flag is 0, if the character could be written, else 1
-; Use the "primaryIO" flag to determine which output port to send a character.
-;------------------------------------------------------------------------------
-nbconoutB:
-         	PUSH	AF
-
-nbconoutB1:	CALL	CKACIA1		; See if ACIA channel B has finished transmitting
-		JR      NZ, nbconoutB2  ; Ready to write
-		POP	AF	        ; Remove the parameter we don't need 
-	        AND     $00             ; Indicate failure
-		RET	        	; Return if ACIA flag signals not ready
-nbconoutB2:	
-	        POP	AF		; RETrieve character
-		OUT	(ACIA1_D),A	; OUTput the character
-	        OR      $ff             ; Indicate success
-		RET
-
-;------------------------------------------------------------------------------
 ; I/O status check routine
 ; Use the "primaryIO" flag to determine which port to check.
 ;------------------------------------------------------------------------------
@@ -269,25 +249,17 @@ M_INIT		LD   SP,M_STACK		; Set the Stack Pointer
 		LD	(primaryIO),A
     		LD   	HL,INITTXT
 		CALL 	M_PRINT
-		; On Display B we need to take care that it does not hang. 	
+		LD	A,$01
+		LD	(primaryIO),A
     		LD   	HL,INITTXT
-		LD      (InitTxtB),HL
+		CALL 	M_PRINT
 
-printInitB:	LD   	HL,(InitTxtB)
-		LD   	A,(HL)	; Get character
-		OR   	A	; Is it $00 ?
-		JR      Z, waitForSpace
-        	CALL    nbconoutB	; Print it
-		JR      Z, waitForSpace ; If we can't write, don't increment
-		INC	HL
-		LD 	(InitTxtB),HL   ; Store pointer into message for next round 
-                JP      printInitB
 		; Wait until space is in one of the buffers to determine the active console
 
 waitForSpace:
 
 		CALL ckincharA
-		JR	Z,chkSpaceB
+		jr	Z,notInA
 		LD	A,$00
 		LD	(primaryIO),A
 		CALL	conin
@@ -295,25 +267,22 @@ waitForSpace:
 		JP	NZ, waitForSpace
 		JR	spacePressed
 
-chkSpaceB:	
+notInA:
 		CALL ckincharB
-	        JR	Z,printInitB ; If no key pressed, try to continue writing the init message on B
+		JR	Z,waitForSpace
 		LD	A,$01
 		LD	(primaryIO),A
 		CALL	conin
 		CP	' '
-		JP	NZ, printInitB ; If space not pressed, try to continue writing the init message on B
+		JP	NZ, waitForSpace
+		JR	spacePressed
 
 spacePressed:
 
 		; Clear message on both consoles
 		LD	A,$0C
 		CALL	conoutA
-	        CALL	nbconoutB
-
-		;; We only clear the message on the active console,
-		;; because trying to write on a console not connected could
-		;; make the system freeze.
+		CALL	conoutB
 
 		; primaryIO is now set to the channel where SPACE was pressed
 	
@@ -686,7 +655,7 @@ CKSUMERR	.BYTE	"Checksum error"
 
 INITTXT  
 		.BYTE	$0C
-		.TEXT	"Press [space] to activate the console."
+		.TEXT	"Press [SPACE] to activate console"
 		.BYTE	$0D,$0A, $00
 
 LDETXT  

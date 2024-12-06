@@ -72,6 +72,9 @@ end MicrocomputerZ80CPM;
 
 architecture struct of MicrocomputerZ80CPM is
 
+    signal reset_counter : unsigned(15 downto 0) := (others => '0');
+    signal reset_n_internal : std_logic := '0';  -- Active low internal reset
+
 	signal n_WR						: std_logic;
 	signal n_RD						: std_logic;
 	signal cpuAddress				: std_logic_vector(15 downto 0);
@@ -155,13 +158,31 @@ begin
 			end if;
 		end if;
 	end process;
+
+process(clk)
+begin
+	if rising_edge(clk) then
+		if N_RESET = '0' then
+			reset_counter <= (others => '0');
+			reset_n_internal <= '0';
+		else
+			if reset_counter /= unsigned'(X"FFFF") then
+				reset_counter <= reset_counter + 1;
+				reset_n_internal <= '0';
+			else
+				reset_n_internal <= '1';
+			end if;
+		end if;
+	end if;
+end process;
+
 -- ____________________________________________________________________________________
 -- CPU CHOICE GOES HERE
 
 cpu1 : entity work.t80s
 generic map(mode => 1, t2write => 1, iowait => 0)
 port map(
-	reset_n => N_RESET,
+	reset_n => reset_n_internal,
 	clk_n => cpuClock,
 	wait_n => '1',
 	int_n => '1',

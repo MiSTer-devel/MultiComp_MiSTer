@@ -67,6 +67,9 @@ end Microcomputer6502Basic;
 
 architecture struct of Microcomputer6502Basic is
 
+    signal reset_counter : unsigned(15 downto 0) := (others => '0');
+    signal reset_n_internal : std_logic := '0';  -- Active low internal reset
+
 	signal n_WR							: std_logic;
 	signal n_RD							: std_logic;
 	signal cpuAddress					: std_logic_vector(15 downto 0);
@@ -114,6 +117,23 @@ architecture struct of Microcomputer6502Basic is
 
 begin
 
+process(clk)
+begin
+	if rising_edge(clk) then
+		if N_RESET = '0' then
+			reset_counter <= (others => '0');
+			reset_n_internal <= '0';
+		else
+			if reset_counter /= unsigned'(X"FFFF") then
+				reset_counter <= reset_counter + 1;
+				reset_n_internal <= '0';
+			else
+				reset_n_internal <= '1';
+			end if;
+		end if;
+	end if;
+end process;
+
 -- ____________________________________________________________________________________
 -- CPU CHOICE GOES HERE
 
@@ -121,7 +141,7 @@ cpu1 : entity work.T65
 port map(
 	Enable => '1',
 	Mode => "00",
-	Res_n => N_RESET,
+	Res_n => reset_n_internal,
 	Clk => cpuClock,
 	Rdy => '1',
 	Abort_n => '1',
@@ -218,7 +238,7 @@ port map(
 	sdSCLK => sdSCLK,
 	n_wr => n_sdCardCS or cpuClock or n_WR,
 	n_rd => n_sdCardCS or cpuClock or (not n_WR),
-	n_reset => n_reset,
+	n_reset => N_RESET,
 	dataIn => cpuDataOut,
 	dataOut => sdCardDataOut_sd,
 	regAddr => cpuAddress(2 downto 0),

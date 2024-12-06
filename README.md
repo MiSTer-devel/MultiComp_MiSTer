@@ -265,11 +265,12 @@ The menu system is designed for straightforward navigation and configuration of 
 
 ### Serial Communication Issues
 
+- Only the Z80 supports the external uart at this time
 - If no response when typing:
-- Verify correct baud rate is selected
-- Check that the correct serial port is selected (Console vs User IO)
-- Try enabling/disabling flow control
-- For User IO port, verify cable connections match pinout documentation
+  - Verify correct baud rate is selected
+  - Check that the correct serial port is selected (Console vs User IO)
+  - Try enabling/disabling flow control
+  - For User IO port, verify cable connections match pinout documentation
 
 ### Storage Issues
 
@@ -280,11 +281,11 @@ The menu system is designed for straightforward navigation and configuration of 
 
 ### System Stability
 
-- 6809 Basic has known reset issues (inherited from original design)
+- 6809 Basic had known reset issues (inherited from original design) the core was actually being reset but only a warm reset, now it supports a cold or warm reset with a prompt
 - If system becomes unresponsive:
-- Use OSD Reset function
-- Try power cycling the MiSTer
-- Verify correct CPU-ROM selection for your intended use
+  - Use OSD Reset function
+  - Try power cycling the MiSTer
+  - Verify correct CPU-ROM selection for your intended use
 
 ### Known Limitations
 
