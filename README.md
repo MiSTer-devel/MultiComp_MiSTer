@@ -96,7 +96,7 @@ For more details on console connection, refer to the official MiSTer documentati
 
 ### Z80 CP/M
 
-You can now use both an external SDCard and/or select the image file within MiSTer. Whatever you like.
+You can now use both an external SDCard in the secondary slot and/or select the image file within MiSTer. Whatever you like.
 
 ### Formatting the SD Card and Installing CP/M
 
@@ -221,7 +221,7 @@ This section describes the On-Screen Display menu configuration for the MultiCom
 
 ### System Control
 
-- __Mount *.IMG__: Provide the image in the games/Multicomp directory
+- __Mount *.IMG__: Provide the image in the games/Multicomp directory if no image is specified it will attempt to use the secondary SD card
 - __Reset after Mount__: Configures system behavior after mounting storage - Options: No, Yes
 - __Reset__: System reset function
 
@@ -249,13 +249,6 @@ This section describes the On-Screen Display menu configuration for the MultiCom
 - None - no hardware flow control
 - RTS/CTS - enable hardware flow control using RTS/CTS signals
 
-### Storage Configuration
-
-- __Storage Controller__:
-- SD Controller - select the secondary SD card as storage
-- Image Controller - select this to access the cpm image from the games/Multicomp directory
-- __Storage Images__: Allows mounting disk images (.IMG files)
-
 ### Additional Information
 The OSD includes version information and build date tracking. This configuration interface provides comprehensive control over the MultiComp's core functionality, allowing users to switch between different CPU architectures, operating systems, and I/O configurations.
 
@@ -275,9 +268,9 @@ The menu system is designed for straightforward navigation and configuration of 
 ### Storage Issues
 
 - If unable to access CP/M:
-- When using SD Controller, verify SD card is properly formatted
-- When using Image Controller, ensure .IMG file is in the correct directory (/media/fat/games/MultiComp)
+- Verify Secondary SD card is properly formatted or an image is selected in the OSD
 - Try toggling "Reset after Mount" option
+- Once either the secondary SD card is selected or the Image file is selected a complete MiSTer re-start is required to change the selection i.e. it can not be changed with a reset of the core.
 
 ### System Stability
 

@@ -1,9 +1,9 @@
 //============================================================================
-//  Grant’s multi computer
+//  Grantï¿½s multi computer
 // 
 //  Port to MiSTer.
 //
-//  Based on Grant’s multi computer
+//  Based on Grantï¿½s multi computer
 //  http://searle.hostei.com/grant/
 //  http://searle.hostei.com/grant/Multicomp/index.html
 //	 and WiSo's collector blog (MiST port)
@@ -230,7 +230,6 @@ localparam CONF_STR = {
 	"O9B,Baud Rate tty,115200,38400,19200,9600,4800,2400;",
 	"OC,Serial Port,Console Port,User IO Port;",
 	"OE,Flow Control,None,RTS/CTS;",  // New flow control option
-	"OD,Storage Controller,SD Controller,Image Controller;",
 	"-;",
 	"RE,Reset;",
 	"V,v",`BUILD_DATE
@@ -323,6 +322,7 @@ wire sdmiso_mux;                          // Multiplexed data input
 wire driveLED_mux;                        // Multiplexed activity indicator
 
 // Controller selection - determines which controller drives SD interface
+//wire storage_ctrl_select = status[13];     // 0=SD controller, 1=image controller 
 wire storage_ctrl_select = status[13];     // 0=SD controller, 1=image controller 
 
 // Multiplex between SD and image controller outputs
