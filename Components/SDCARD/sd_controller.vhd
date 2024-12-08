@@ -101,7 +101,7 @@ use ieee.std_logic_unsigned.all;
 
 entity sd_controller is
 generic (
-        constant CLKEDGE_DIVIDER : integer := 200	-- 50MHz / 200 gives edges at 250kHz ie output
+        constant CLKEDGE_DIVIDER : integer := 100	-- 50MHz / 100 gives edges at 500kHz ie output
 																	-- or sdSCLK of 250kHz to be used during init phase
 );
 port (
@@ -302,9 +302,7 @@ begin
 						state <= cmd0;
 					else
 						bit_counter := bit_counter - 1;
-						if clkCount = (CLKEDGE_DIVIDER - 1) then  -- Only toggle clock at divided rate
-							sclk_sig <= not sclk_sig;
-						end if;
+						sclk_sig <= not sclk_sig;
 					end if;
 
 				when cmd0 =>
