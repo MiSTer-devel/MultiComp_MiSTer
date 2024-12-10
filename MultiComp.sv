@@ -25,7 +25,6 @@
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //============================================================================
 
-
 module emu
 (
 	//Master input clock
@@ -205,6 +204,8 @@ assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DD
 //assign UART_RTS = UART_CTS;
 assign UART_DTR = UART_DSR;
 
+assign LED_USER  = vsd_sel & sd_act;
+assign LED_DISK  = ~driveLED;
 assign LED_POWER = 0;
 assign BUTTONS = 0;
 
@@ -308,41 +309,49 @@ wire reset = RESET | status[0] | buttons[1] | (status[15] && img_mounted);
 
 /////////////////  SDCARD  ////////////////////////
 
-// SD card interface signal declarations
-// _sd suffix for SD controller signals
-// _img suffix for image controller signals 
-// _mux suffix for multiplexed signals 
-wire sdclk_sd, sdmosi_sd, sdcs_sd;        // SD controller outputs
-wire sdclk_img, sdmosi_img, sdcs_img;     // Image controller outputs
-wire driveLED_sd, driveLED_img;           // Drive activity indicators
+wire sdclk;
+wire sdmosi;
+wire sdmiso = vsd_sel ? vsdmiso : SD_MISO;
+wire sdss;
 
-// Multiplexed signals that route to physical SD interface
-wire sdclk_mux, sdmosi_mux, sdcs_mux;     // Multiplexed control signals
-wire sdmiso_mux;                          // Multiplexed data input
-wire driveLED_mux;                        // Multiplexed activity indicator
-
-// Controller selection - determines which controller drives SD interface
-//wire storage_ctrl_select = status[13];     // 0=SD controller, 1=image controller 
-wire storage_ctrl_select = status[13];     // 0=SD controller, 1=image controller 
-
-// Multiplex between SD and image controller outputs
-assign sdclk_mux = storage_ctrl_select ? sdclk_img : sdclk_sd;    // Clock output
-assign sdmosi_mux = storage_ctrl_select ? sdmosi_img : sdmosi_sd; // Data output to SD
-assign sdcs_mux = storage_ctrl_select ? sdcs_img : sdcs_sd;       // Chip select
-assign driveLED_mux = storage_ctrl_select ? driveLED_img : driveLED_sd; // Activity LED
-
-// MISO input routing - selects between SD card and virtual SD based on vsd_sel
-assign sdmiso_mux = vsd_sel ? vsdmiso : SD_MISO;
-
-// Virtual SD interface enable
+wire vsdmiso;
 reg vsd_sel = 0;
+
 always @(posedge clk_sys) if(img_mounted) vsd_sel <= |img_size;
 
-// Map multiplexed signals to physical SD interface
-// Keep physical SD enabled when using SD controller
-assign SD_SCK = (vsd_sel || !storage_ctrl_select) ? sdclk_mux : 1'bZ;   
-assign SD_MOSI = (vsd_sel || !storage_ctrl_select) ? sdmosi_mux : 1'bZ;  
-assign SD_CS = (vsd_sel || !storage_ctrl_select) ? sdcs_mux : 1'bZ;
+sd_card sd_card
+(
+	.*,
+
+	.clk_spi(clk_sys),
+	.sdhc(1),
+	.sck(sdclk),
+	.ss(sdss | ~vsd_sel),
+	.mosi(sdmosi),
+	.miso(vsdmiso)
+);
+
+assign SD_CS   = sdss   |  vsd_sel;
+assign SD_SCK  = sdclk  & ~vsd_sel;
+assign SD_MOSI = sdmosi & ~vsd_sel;
+
+reg sd_act;
+
+always @(posedge clk_sys) begin
+	reg old_mosi, old_miso;
+	integer timeout = 0;
+
+	old_mosi <= sdmosi;
+	old_miso <= sdmiso;
+
+	sd_act <= 0;
+	if(timeout < 1000000) begin
+		timeout <= timeout + 1;
+		sd_act <= 1;
+	end
+
+	if((old_mosi ^ sdmosi) || (old_miso ^ sdmiso)) timeout <= 0;
+end
 
 // Serial port selection
 wire serial_port_select = status[12];    // 0 = Console Port (UART), 1 = User IO Port
@@ -401,40 +410,6 @@ assign user_tx 		= USER_OUT[1];
 assign user_rts 	= USER_OUT[2];
 assign user_cts_en 	= USER_OUT[3];
 
-// Virtual SD card implementation
-sd_card sd_card
-(
-    .*,
-    .clk_spi(clk_sys),
-    .sdhc(1),
-    .sck(sdclk_mux),
-    .ss(sdcs_mux | ~vsd_sel),
-    .mosi(sdmosi_mux),
-    .miso(vsdmiso)
-);
-
-// Drive activity detection
-reg sd_act;
-always @(posedge clk_sys) begin
-    reg old_mosi, old_miso;
-    integer timeout = 0;
-
-    old_mosi <= sdmosi_mux;
-    old_miso <= sdmiso_mux;
-
-    sd_act <= 0;
-    if(timeout < 1000000) begin
-        timeout <= timeout + 1;
-        sd_act <= 1;
-    end
-
-    if((old_mosi ^ sdmosi_mux) || (old_miso ^ sdmiso_mux)) timeout <= 0;
-end
-
-// Map drive LED to system LED output
-assign LED_USER = vsd_sel & sd_act;
-assign LED_DISK = {2{~driveLED_mux}};
-
 ///////////////////////////////////////////////////
 
 assign CLK_VIDEO = clk_sys;
@@ -448,19 +423,19 @@ wire [2:0] baud_rate = status[11:9];
 wire hblank, vblank;
 wire hs, vs;
 wire [1:0] r,g,b;
+wire driveLED;
 
 wire [3:0] _hblank, _vblank;
 wire [3:0] _hs, _vs;
 wire [1:0] _r[3:0], _g[3:0], _b[3:0];
+wire [3:0] _driveLED;
 wire [3:0] _CE_PIXEL;
+wire [3:0] _SD_CS;
+wire [3:0] _SD_MOSI;
+wire [3:0] _SD_SCK;
 wire [3:0] _txd;
 wire [3:0] _rts;  // RTS signals from CPUs
 
-// Define signal arrays for each microcomputer's SD interface
-wire [3:0] sdcs_ctrl;    // SD chip select signals from controllers
-wire [3:0] sdmosi_ctrl;  // SD MOSI signals from controllers
-wire [3:0] sdclk_ctrl;   // SD clock signals from controllers
-wire [3:0] driveLED_ctrl; // Drive LED signals from controllers
 
 // Add baud rate selection logic
 reg [15:0] baud_increment;
@@ -486,36 +461,12 @@ begin
     g           <= _g[cpu_type][1:0];
     b           <= _b[cpu_type][1:0];
     CE_PIXEL    <= _CE_PIXEL[cpu_type];
+	sdss		<= _SD_CS[cpu_type];
+	sdmosi		<= _SD_MOSI[cpu_type];
+	sdclk		<= _SD_SCK[cpu_type];
+	driveLED 	<= _driveLED[cpu_type];
     serial_tx   <= _txd[cpu_type];
     serial_rts  <= _rts[cpu_type];
-
-    // Override based on selected CPU
-    case(cpu_type)
-        cpuZ80CPM: begin
-            sdcs_sd = sdcs_ctrl[cpuZ80CPM];
-            sdmosi_sd = sdmosi_ctrl[cpuZ80CPM];
-            sdclk_sd = sdclk_ctrl[cpuZ80CPM];
-            driveLED_sd = driveLED_ctrl[cpuZ80CPM];
-        end
-        cpuZ80Basic: begin
-            sdcs_sd = sdcs_ctrl[cpuZ80Basic];
-            sdmosi_sd = sdmosi_ctrl[cpuZ80Basic];
-            sdclk_sd = sdclk_ctrl[cpuZ80Basic];
-            driveLED_sd = driveLED_ctrl[cpuZ80Basic];
-        end
-        cpu6502Basic: begin
-            sdcs_sd = sdcs_ctrl[cpu6502Basic];
-            sdmosi_sd = sdmosi_ctrl[cpu6502Basic];
-            sdclk_sd = sdclk_ctrl[cpu6502Basic];
-            driveLED_sd = driveLED_ctrl[cpu6502Basic];
-        end
-        cpu6809Basic: begin
-            sdcs_sd = sdcs_ctrl[cpu6809Basic];
-            sdmosi_sd = sdmosi_ctrl[cpu6809Basic];
-            sdclk_sd = sdclk_ctrl[cpu6809Basic];
-            driveLED_sd = driveLED_ctrl[cpu6809Basic];
-        end
-    endcase
 end
 
 MicrocomputerZ80CPM MicrocomputerZ80CPM
@@ -533,12 +484,11 @@ MicrocomputerZ80CPM MicrocomputerZ80CPM
     .cepix(_CE_PIXEL[cpuZ80CPM]),
     .ps2Clk(PS2_CLK),
     .ps2Data(PS2_DAT),
-    .sdCS(sdcs_ctrl[cpuZ80CPM]),
-    .sdMOSI(sdmosi_ctrl[cpuZ80CPM]),
-    .sdMISO(sdmiso_mux),
-    .sdSCLK(sdclk_ctrl[cpuZ80CPM]),
-    .driveLED(driveLED_ctrl[cpuZ80CPM]),
-    .sd_ctrl_sel(storage_ctrl_select),
+	.sdCS		(_SD_CS[cpuZ80CPM]),
+	.sdMOSI		(_SD_MOSI[cpuZ80CPM]),
+	.sdMISO		(sdmiso),
+	.sdSCLK		(_SD_SCK[cpuZ80CPM]),
+    .driveLED(_driveLED[cpuZ80CPM]),
     .rxd1(serial_rx),
     .txd1(_txd[cpuZ80CPM]),
     .rts1(_rts[cpuZ80CPM]),
@@ -560,12 +510,11 @@ MicrocomputerZ80Basic MicrocomputerZ80Basic
     .cepix(_CE_PIXEL[cpuZ80Basic]),
     .ps2Clk(PS2_CLK),
     .ps2Data(PS2_DAT),
-    .sdCS(sdcs_ctrl[cpuZ80Basic]),
-    .sdMOSI(sdmosi_ctrl[cpuZ80Basic]), 
-    .sdMISO(sdmiso_mux),
-    .sdSCLK(sdclk_ctrl[cpuZ80Basic]),
-    .driveLED(driveLED_ctrl[cpuZ80Basic]),
-    .sd_ctrl_sel(storage_ctrl_select),
+	.sdCS(_SD_CS[cpuZ80Basic]),
+	.sdMOSI(_SD_MOSI[cpuZ80Basic]),
+	.sdMISO(sdmiso),
+	.sdSCLK(_SD_SCK[cpuZ80Basic]),
+    .driveLED(_driveLED[cpuZ80Basic]),
     .rxd1(serial_rx),
     .txd1(_txd[cpuZ80Basic]),
     .rts1(_rts[cpuZ80Basic]),
@@ -587,12 +536,11 @@ Microcomputer6502Basic Microcomputer6502Basic
     .cepix(_CE_PIXEL[cpu6502Basic]),
     .ps2Clk(PS2_CLK),
     .ps2Data(PS2_DAT),
-    .sdCS(sdcs_ctrl[cpu6502Basic]),
-    .sdMOSI(sdmosi_ctrl[cpu6502Basic]),
-    .sdMISO(sdmiso_mux),
-    .sdSCLK(sdclk_ctrl[cpu6502Basic]),
-    .driveLED(driveLED_ctrl[cpu6502Basic]),
-    .sd_ctrl_sel(storage_ctrl_select),
+	.sdCS(_SD_CS[cpu6502Basic]),
+	.sdMOSI(_SD_MOSI[cpu6502Basic]),
+	.sdMISO(sdmiso),
+	.sdSCLK(_SD_SCK[cpu6502Basic]),
+    .driveLED(_driveLED[cpu6502Basic]),
     .rxd1(serial_rx),
     .txd1(_txd[cpu6502Basic]),
     .rts1(_rts[cpu6502Basic]),
@@ -615,12 +563,11 @@ Microcomputer6809Basic Microcomputer6809Basic
     .cepix(_CE_PIXEL[cpu6809Basic]),
     .ps2Clk(PS2_CLK),
     .ps2Data(PS2_DAT),
-    .sdCS(sdcs_ctrl[cpu6809Basic]),
-    .sdMOSI(sdmosi_ctrl[cpu6809Basic]),
-    .sdMISO(sdmiso_mux),
-    .sdSCLK(sdclk_ctrl[cpu6809Basic]),
-    .driveLED(driveLED_ctrl[cpu6809Basic]),
-    .sd_ctrl_sel(storage_ctrl_select),
+	.sdCS(_SD_CS[cpu6809Basic]),
+	.sdMOSI(_SD_MOSI[cpu6809Basic]),
+	.sdMISO(sdmiso),
+	.sdSCLK(_SD_SCK[cpu6809Basic]),
+    .driveLED(_driveLED[cpu6809Basic]),
     .rxd1(serial_rx),
     .txd1(_txd[cpu6809Basic]),
     .rts1(_rts[cpu6809Basic]),

@@ -60,7 +60,6 @@ entity Microcomputer6502Basic is
 		sdMOSI		: out std_logic;
 		sdMISO		: in std_logic;
 		sdSCLK		: out std_logic;
-		sd_ctrl_sel : in std_logic;
 		driveLED		: out std_logic :='1'	
 	);
 end Microcomputer6502Basic;
@@ -102,11 +101,6 @@ architecture struct of Microcomputer6502Basic is
 	signal n_interface1CS			: std_logic :='1';
 	signal n_interface2CS			: std_logic :='1';
 	signal n_sdCardCS					: std_logic :='1';
-
-    signal sdCardDataOut_sd  : std_logic_vector(7 downto 0);
-    signal sdCardDataOut_img : std_logic_vector(7 downto 0);
-    signal driveLED_sd, driveLED_img : std_logic;
-    signal sdMISO_int : std_logic;  -- Add this signal declaration
 
    signal serialClkCount         : unsigned(15 downto 0);
 	signal cpuClkCount				: std_logic_vector(5 downto 0); 
@@ -234,33 +228,17 @@ sd1 : entity work.sd_controller
 port map(
 	sdCS => sdCS,
 	sdMOSI => sdMOSI,
-	sdMISO => sdMISO_int,
+	sdMISO => sdMISO,
 	sdSCLK => sdSCLK,
 	n_wr => n_sdCardCS or cpuClock or n_WR,
 	n_rd => n_sdCardCS or cpuClock or (not n_WR),
 	n_reset => N_RESET,
 	dataIn => cpuDataOut,
-	dataOut => sdCardDataOut_sd,
+	dataOut => sdCardDataOut,
 	regAddr => cpuAddress(2 downto 0),
-	driveLED => driveLED_sd,
+	driveLED => driveLED,
 	clk => sdClock -- twice the spi clk
 );
-
-    -- Add signal assignment outside port map:
-    sdMISO_int <= sdMISO when sd_ctrl_sel = '0' else '1';
-
-    -- New image controller
-    img1 : entity work.image_controller
-    port map(
-        clk => clk,
-        n_reset => N_RESET,
-        n_rd => n_sdCardCS or n_ioRD,
-        n_wr => n_sdCardCS or n_ioWR,
-        dataIn => cpuDataOut,
-        dataOut => sdCardDataOut_img,
-        regAddr => cpuAddress(2 downto 0),
-        driveLED => driveLED_img
-    );
 
 -- ____________________________________________________________________________________
 -- MEMORY READ/WRITE LOGIC GOES HERE
@@ -279,13 +257,6 @@ n_internalRam1CS <= not n_basRomCS; -- Full Internal RAM - 64 K
 
 -- ____________________________________________________________________________________
 -- BUS ISOLATION GOES HERE
-    -- Mux controller outputs based on selection
-    sdCardDataOut <= sdCardDataOut_img when sd_ctrl_sel = '1' else 
-                     sdCardDataOut_sd;
-                     
-    driveLED <= driveLED_img when sd_ctrl_sel = '1' else 
-                driveLED_sd;
-
 
 cpuDataIn <=
 interface1DataOut when n_interface1CS = '0' else

@@ -60,7 +60,6 @@ entity MicrocomputerZ80CPM is
 		sdMOSI			: out std_logic;
 		sdMISO			: in std_logic;
 		sdSCLK			: out std_logic;
-	    sd_ctrl_sel     : in std_logic;
 		driveLED		: out std_logic :='1';
 
 		usbCS			: out std_logic;
@@ -116,10 +115,6 @@ architecture struct of MicrocomputerZ80CPM is
 	signal cpuClock					: std_logic;
 	signal serialClock				: std_logic;
 	signal sdClock					: std_logic;
-    signal sdCardDataOut_sd			: std_logic_vector(7 downto 0);
-    signal sdCardDataOut_img		: std_logic_vector(7 downto 0);
-    signal driveLED_sd, driveLED_img : std_logic;
-    signal sdMISO_int : std_logic;  -- Add this signal declaration
 
 	--CPM
 	signal n_RomActive 				: std_logic := '0';
@@ -277,32 +272,16 @@ port map(
     port map(
         sdCS => sdCS,
         sdMOSI => sdMOSI,
-        sdMISO => sdMISO_int,  -- Use the internal signal
+        sdMISO => sdMISO,
         sdSCLK => sdSCLK,
         n_wr => n_sdCardCS or n_ioWR,
         n_rd => n_sdCardCS or n_ioRD,
         n_reset => N_RESET,
         dataIn => cpuDataOut,
-        dataOut => sdCardDataOut_sd,
+        dataOut => sdCardDataOut,
         regAddr => cpuAddress(2 downto 0),
-        driveLED => driveLED_sd,
+        driveLED => driveLED,
         clk => clk
-    );
-
-    -- Add signal assignment outside port map:
-    sdMISO_int <= sdMISO when sd_ctrl_sel = '0' else '1';
-
-    -- New image controller
-    img1 : entity work.image_controller
-    port map(
-        clk => clk,
-        n_reset => N_RESET,
-        n_rd => n_sdCardCS or n_ioRD,
-        n_wr => n_sdCardCS or n_ioWR,
-        dataIn => cpuDataOut,
-        dataOut => sdCardDataOut_img,
-        regAddr => cpuAddress(2 downto 0),
-        driveLED => driveLED_img
     );
 
 usb : ch376s_module
@@ -344,13 +323,6 @@ n_internalRam1CS <= not n_basRomCS; -- Full Internal RAM - 64 K
 
 -- ____________________________________________________________________________________
 -- BUS ISOLATION GOES HERE
-
-    -- Mux controller outputs based on selection
-    sdCardDataOut <= sdCardDataOut_img when sd_ctrl_sel = '1' else 
-                     sdCardDataOut_sd;
-                     
-    driveLED <= driveLED_img when sd_ctrl_sel = '1' else 
-                driveLED_sd;
 
     -- CPU data input mux needs to be written like this:
     cpuDataIn <= interface1DataOut when (n_interface1CS = '0') else
