@@ -371,6 +371,7 @@ set_global_assignment -name VHDL_FILE Components/M6502/T65.vhd
 set_global_assignment -name VHDL_FILE Components/UART/bufferedUART.vhd
 set_global_assignment -name VHDL_FILE Components/SDCARD/sd_controller.vhd
 set_global_assignment -name VHDL_FILE Components/SDCARD/image_controller.vhd
+set_global_assignment -name VHDL_FILE Components/SDCARD/image_card.sv
 set_global_assignment -name QIP_FILE Components/INTERNALRAM/InternalRam64K.qip
 set_global_assignment -name VHDL_FILE Components/TERMINAL/SBCTextDisplayRGB.vhd
 set_global_assignment -name VHDL_FILE Components/TERMINAL/CGABoldRom.vhd
