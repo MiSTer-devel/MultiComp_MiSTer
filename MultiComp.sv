@@ -351,6 +351,7 @@ wire sdss;
 wire vsdmiso;
 reg vsd_sel = 0;
 
+// latch vsd_sel if user selects an image file
 always @(posedge clk_sys) begin
     if(RESET) begin  // Only clear on hard reset
         vsd_sel <= 0;
@@ -365,13 +366,12 @@ end
 
 //always @(posedge clk_sys) if(img_mounted) vsd_sel <= |img_size;
 
+// uses the previous sd_card implementation i.e. now in components/sdcard
 image_card image_card
 (
     .clk_sys(clk_sys),
     .reset(reset),
     .sdhc(1),
-	//.img_mounted(img_mounted),
-	//.img_size(img_size),
 
     .sd_lba(sd_lba[0]),
     .sd_rd(sd_rd),             // New connection
@@ -389,6 +389,34 @@ image_card image_card
     .mosi(sdmosi),
     .miso(vsdmiso)
 );
+
+// this does not work i.e. with the new sd_card in /sys, not sure why yet
+// sd_card sd_card
+// (
+//     .clk_sys(clk_sys),
+//     .reset(reset),
+//     .sdhc(1),
+
+// 	.img_mounted(img_mounted),
+// 	.img_size(img_size),
+
+//     .sd_lba(sd_lba[0]),
+//     .sd_rd(sd_rd),             // New connection
+//     .sd_wr(sd_wr),             // New connection
+//     .sd_ack(sd_ack),           // New connection
+
+//     .sd_buff_addr(sd_buff_addr),   // New connection
+//     .sd_buff_dout(sd_buff_dout),   // New connection
+//     .sd_buff_din(sd_buff_din[0]),
+//     .sd_buff_wr(sd_buff_wr),        // New connection
+
+//     .clk_spi(clk_sys),
+//     .ss(sdss | ~vsd_sel),
+//     .sck(sdclk),
+//     .mosi(sdmosi),
+//     .miso(vsdmiso)
+// );
+
 
 assign SD_CS   = sdss   |  vsd_sel;
 assign SD_SCK  = sdclk  & ~vsd_sel;

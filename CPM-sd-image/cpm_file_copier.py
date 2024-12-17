@@ -122,10 +122,10 @@ UNUSED_DIR_MARKER = 0xE5  # Marker for unused directory entries
 UNUSED_DATA_MARKER = 0x00  # Marker for unused data blocks
 
 # Default values
-DEFAULT_IMAGE_FILE = "cpm-zeroed.img"
+DEFAULT_IMAGE_FILE = "cpm-new.img"
 DEFAULT_TO_DIR = "to_img"
 DEFAULT_FROM_DIR = "from_img"
-DEFAULT_HEX_PATH = os.path.join("hexFiles")  # Base path for hex files
+DEFAULT_HEX_PATH = os.path.join("Z80 CPM and bootloader (basmon)/hexFiles")  # Base path for hex files
 DEFAULT_CPM_HEX = os.path.join(DEFAULT_HEX_PATH, "cpm22.hex")
 DEFAULT_CBIOS_HEX = os.path.join(DEFAULT_HEX_PATH, "cbios128.hex")
 
@@ -414,13 +414,26 @@ def write_track0_image(image_file: str, cpm_hex: str, cbios_hex: str):
 def create_blank_disk_image(image_file: str, drives: int = 16, cpm_hex=None, cbios_hex=None):
     """
     Create a blank CP/M disk image and write system to track 0.
+    The image file will be created in the current working directory.
+    
+    Args:
+        image_file (str): Name of the image file to create
+        drives (int): Number of drives to initialize (1-16)
+        cpm_hex (str, optional): CP/M hex content
+        cbios_hex (str, optional): CBIOS hex content
     """
+    # Ensure the image file is created in current directory
+    image_path = os.path.basename(image_file)
+    
     # Calculate total size
     drive_size = DRIVE_SIZE_MB * 1024 * 1024  # 8MB per drive
     total_size = drive_size * drives
 
-    # Create the file
-    with open(image_file, 'wb') as f:
+    print(f"\nCreating disk image '{image_path}' in {os.getcwd()}")
+    print(f"Total size: {total_size / (1024*1024):.1f} MB")
+
+    # Create the file in current directory
+    with open(image_path, 'wb') as f:
         # Write zeros to the entire file
         buffer_size = 1024 * 1024  # 1MB buffer
         zeros = bytes([0] * buffer_size)
@@ -450,9 +463,11 @@ def create_blank_disk_image(image_file: str, drives: int = 16, cpm_hex=None, cbi
     # Write CP/M and CBIOS as one block if both are provided
     if cpm_hex and cbios_hex:
         print("\nWriting system to track 0...")
-        write_track0_image(image_file, cpm_hex, cbios_hex)
+        write_track0_image(image_path, cpm_hex, cbios_hex)
     else:
         print("Warning: Both CP/M and CBIOS hex files required for system track")
+
+    print(f"\nDisk image created successfully: {image_path}")
 
 def main():
     parser = argparse.ArgumentParser(description="CP/M 2.2 disk image manipulation tool")
@@ -460,7 +475,7 @@ def main():
     parser.add_argument("--to", default=DEFAULT_TO_DIR, help=f"Source directory for files to copy to image (default: {DEFAULT_TO_DIR})")
     parser.add_argument("--from", dest="from_dir", default=DEFAULT_FROM_DIR, help=f"Target directory for extracted files (default: {DEFAULT_FROM_DIR})")
     parser.add_argument("--copy", action="store_true", help="Copy files to the image (default is to extract)")
-    parser.add_argument("--init", action="store_true", help="Initialize a new disk image")
+    parser.add_argument("--init", default=True, action="store_true", help="Initialize a new disk image")
     parser.add_argument("--drives", type=int, default=16, help="Number of drives for new image (1-16, default 16)")
     parser.add_argument("--force", action="store_true", help="Force overwrite of existing image")
     parser.add_argument("--hex-path", default=DEFAULT_HEX_PATH, help=f"Base path for hex files (default: {DEFAULT_HEX_PATH})")

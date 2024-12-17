@@ -710,45 +710,78 @@ setLBAaddr:
 ;================================================================================================
 
 readhst:
-		PUSH 	AF
-		PUSH 	BC
-		PUSH 	HL
+        PUSH    AF
+        PUSH    BC
+        PUSH    HL
 
-rdWait1: IN	A,(SD_STATUS)
-		CP	128
-		JR	NZ,rdWait1
-		
-		CALL 	setLBAaddr
-		
-		LD	A,$00	; 00 = Read block
-		OUT	(SD_CONTROL),A
+rdWait1: IN      A,(SD_STATUS)
+        CP      128             ; Check for ready status
+        JR      NZ,rdWait1
 
-		LD 	c,4
-		LD 	HL,hstbuf
+        ; Add multiple status checks before starting read
+        LD      B,3            ; Check status 3 times
+rdCheck1:
+        IN      A,(SD_STATUS)
+        CP      128
+        JR      NZ,rdCheck1
+        DJNZ    rdCheck1
+        
+        CALL    setLBAaddr
+        
+        LD      A,$00          ; 00 = Read block
+        OUT     (SD_CONTROL),A
+
+        LD      c,4
+        LD      HL,hstbuf
 rd4secs:
-		LD 	b,128
+        LD      b,128
 rdByte:
 
-rdWait2: IN	A,(SD_STATUS)
-		CP	224	; Read byte waiting
-		JR	NZ,rdWait2
+rdWait2: IN      A,(SD_STATUS)
+        CP      224            ; Read byte waiting
+        JR      NZ,rdWait2
 
-		IN	A,(SD_DATA)
+        ; Add extra validation checks before each read
+        PUSH    BC            ; Save main counters
+        LD      B,2          ; Check status twice
+rdCheck2:
+        IN      A,(SD_STATUS)
+        CP      224
+        JR      NZ,rdCheck2
+        DJNZ    rdCheck2
+        POP     BC           ; Restore main counters
 
-		LD 	(HL),A
-		INC 	HL
-		dec 	b
-		JR 	NZ, rdByte
-		dec 	c
-		JR 	NZ,rd4secs
+        IN      A,(SD_DATA)
 
-		POP 	HL
-		POP 	BC
-		POP 	AF
+        ; Add small delay after read before store
+        PUSH    BC
+        LD      B,10
+rdDelay:
+        DJNZ    rdDelay
+        POP     BC
 
-		XOR 	a
-		ld	(erflag),a
-		RET
+        LD      (HL),A
+        INC     HL
+        dec     b
+        JR      NZ, rdByte
+        dec     c
+        JR      NZ,rd4secs
+
+        ; Add final wait before returning
+        LD      B,0
+rdWaitFinal:
+        IN      A,(SD_STATUS)
+        CP      128             ; Wait for ready status
+        JR      NZ,rdWaitFinal
+        DJNZ    rdWaitFinal
+
+        POP     HL
+        POP     BC
+        POP     AF
+
+        XOR     a
+        ld      (erflag),a
+        RET
 
 
 ;================================================================================================
@@ -756,56 +789,63 @@ rdWait2: IN	A,(SD_STATUS)
 ;================================================================================================
 
 writehst:
-		PUSH 	AF
-		PUSH 	BC
-		PUSH 	HL
+        PUSH    AF
+        PUSH    BC
+        PUSH    HL
 
-wrWait1: IN	A,(SD_STATUS)
-		CP	128
-		JR	NZ,wrWait1
+wrWait1: IN      A,(SD_STATUS)
+        CP      128
+        JR      NZ,wrWait1
 
-		CALL 	setLBAaddr
-		
-		LD	A,$01	; 01 = Write block
-		OUT	(SD_CONTROL),A
-	
-		LD 	c,4
-		LD 	HL,hstbuf
+        CALL    setLBAaddr
+        
+        LD      A,$01   ; 01 = Write block
+        OUT     (SD_CONTROL),A
+    
+        LD      c,4
+        LD      HL,hstbuf
 wr4secs:
-		LD 	b,128
+        LD      b,128
 wrByte:
-	
-wrWait2: IN	A,(SD_STATUS)
-		CP	160 ; Write buffer empty
-		JR	NZ,wrWait2
+    
+wrWait2: IN      A,(SD_STATUS)
+        CP      160     ; Write buffer empty
+        JR      NZ,wrWait2
 
-		; UPDATE S0urceror, inserted wait cycle between IN and OUT
-		; to resolve unknown write issue in sd_controller.vhd in combination 
-		; with MISTer virtual SD interface sys/sd_card.sv
-		; which results in hangs or write errors.
-		push bc
-		ld b,50
-_again:
-		djnz _again	
-		pop bc
-		; END UPDATE
+        ; Add multiple status checks before proceeding with write
+        PUSH    BC      ; Save main counters
+        LD      B,3    ; Check status 3 times
+wrCheck:
+        IN      A,(SD_STATUS)
+        CP      160
+        JR      NZ,wrCheck
+        DJNZ    wrCheck
+        POP     BC      ; Restore main counters
 
-		LD 	A,(HL)
-		OUT	(SD_DATA),A
-		INC 	HL
-		dec 	b
-		JR 	NZ, wrByte
+        LD      A,(HL)
+        OUT     (SD_DATA),A
+        INC     HL
+        dec     b
+        JR      NZ,wrByte
 
-		dec 	c
-		JR 	NZ,wr4secs
+        dec     c
+        JR      NZ,wr4secs
 
-		POP 	HL
-		POP 	BC
-		POP 	AF
-		
-		XOR 	a
-		ld	(erflag),a
-		RET
+        ; Add final wait before returning
+        LD      B,0
+wrWaitFinal:
+        IN      A,(SD_STATUS)
+        CP      128             ; Wait for ready status
+        JR      NZ,wrWaitFinal
+        DJNZ    wrWaitFinal
+
+        POP     HL
+        POP     BC
+        POP     AF
+        
+        XOR     a
+        ld      (erflag),a
+        RET
 
 ;================================================================================================
 ; Utilities
