@@ -328,9 +328,11 @@ set_global_assignment -name QIP_FILE Components/TERMINAL/DisplayRam2K.qip
 set_global_assignment -name QIP_FILE Components/TERMINAL/CGABoldRomReduced.qip
 set_global_assignment -name QIP_FILE ROMS/6809/M6809_EXT_BASIC_ROM.qip
 set_global_assignment -name QIP_FILE ROMS/Z80/Z80_CPM_BASIC_ROM.qip
+set_global_assignment -name QIP_FILE ROMS/6809/M6809_CAMELFORTH_ROM.qip
 set_global_assignment -name VHDL_FILE MicrocomputerZ80CPM.vhd
 set_global_assignment -name VHDL_FILE Microcomputer6502Basic.vhd
 set_global_assignment -name VHDL_FILE Microcomputer6809Basic.vhd
+set_global_assignment -name VHDL_FILE Microcomputer6809Forth.vhd
 set_global_assignment -name VHDL_FILE MicrocomputerZ80Basic.vhd
 set_global_assignment -name SIGNALTAP_FILE "output_files/status13-stp1.stp"
 set_global_assignment -name SLD_FILE "db/status13-stp1_auto_stripped.stp"

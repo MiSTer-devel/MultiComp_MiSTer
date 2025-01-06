@@ -92,7 +92,7 @@ UART connected to serial interface 2 of the core. The latter allows to use the c
 For more details on console connection, refer to the official MiSTer documentation:
 [MiSTer Console Connection Guide](https://MiSTer-devel.github.io/MkDocs_MiSTer/advanced/console/)
 
-## The MiSTer OSD allows the access to four machines
+## The MiSTer OSD allows the access to five machines
 
 ### Z80 CP/M
 
@@ -213,6 +213,10 @@ LOG, SQR, HEX$, VARPTR, INSTR, STRING$, MID$ (MODIFICATION), POS
 
 <http://searle.x10host.com/Multicomp/#BASICKeywords>
 
+### 6809 Camel Forth
+
+A 6809 implementation of Camel Forth
+
 # MultiComp OSD Configuration
 
 This section describes the On-Screen Display menu configuration for the MultiComp system, providing control over CPU selection, storage, and communication parameters.
@@ -232,6 +236,7 @@ This section describes the On-Screen Display menu configuration for the MultiCom
 - Z80 with BASIC
 - 6502 with BASIC
 - 6809 with BASIC
+- 6809 Forth
 
 ### Communication Settings
 
@@ -425,9 +430,680 @@ Grant Searle
 | & | - | - | ✓ | Bitwise AND | `R = X & Y` |
 
 Notes:
+
 1. Z80 BASIC is the most commonly used version for CP/M systems
 2. 6502 BASIC is a Microsoft BASIC variant
 3. 6809 BASIC has the most extensive command set but lacks storage commands
 4. None of the 6502 and 6809 variants support CSAVE/CLOAD operations
 
 Each example shows the most common usage pattern for the command. Many commands have additional optional parameters or alternate syntaxes not shown in these basic examples.
+
+# BASIC Programming Examples
+
+A collection of example programs demonstrating various BASIC programming concepts and commands.
+
+Some of these may only run on the 6809.
+
+## Number Guessing Game
+
+This program demonstrates input handling, loops, and conditional statements. The computer picks a random number and the player has 10 tries to guess it.
+
+```basic
+10 REM Number Guessing Game
+20 CLS
+30 PRINT "Number Guessing Game!"
+40 LET N = INT(RND(1) * 100) + 1
+50 LET TRIES = 0
+60 PRINT "Guess a number between 1 and 100"
+70 INPUT "Your guess: "; G
+80 LET TRIES = TRIES + 1
+90 IF G = N THEN GOTO 150
+100 IF G < N THEN PRINT "Too low!"
+110 IF G > N THEN PRINT "Too high!"
+120 IF TRIES < 10 THEN GOTO 70
+130 PRINT "Sorry, you've run out of tries. The number was"; N
+140 GOTO 160
+150 PRINT "Congratulations! You got it in"; TRIES; "tries!"
+160 INPUT "Play again (Y/N)? "; A$
+170 IF LEFT$(A$, 1) = "Y" OR LEFT$(A$, 1) = "y" THEN GOTO 40
+180 END
+```
+
+Key concepts:
+- Random number generation
+- Input validation
+- Conditional branching
+- Loop control
+- String comparison
+
+## String Manipulation
+
+This example demonstrates various string operations and functions available in BASIC.
+
+```basic
+10 REM String Manipulation Demo
+20 LET A$ = "BASIC Programming"
+30 PRINT "Original string: "; A$
+40 PRINT "Length: "; LEN(A$)
+50 PRINT "First 5 chars: "; LEFT$(A$, 5)
+60 PRINT "Last 7 chars: "; RIGHT$(A$, 7)
+70 PRINT "Middle 6 chars: "; MID$(A$, 7, 6)
+80 FOR I = 1 TO LEN(A$)
+90 PRINT MID$(A$, I, 1);
+100 NEXT I
+110 PRINT
+120 END
+```
+
+Key concepts:
+- String functions (LEN, LEFT$, RIGHT$, MID$)
+- Character-by-character processing
+- String concatenation
+- FOR/NEXT loops with strings
+
+## Math Functions Calculator
+
+A simple calculator program that demonstrates mathematical functions and structured programming using subroutines.
+
+```basic
+10 REM Math Functions Calculator
+20 PRINT "Math Functions Calculator"
+30 PRINT "1. Square Root"
+40 PRINT "2. Sine"
+50 PRINT "3. Cosine"
+60 PRINT "4. Tangent"
+70 PRINT "5. Exit"
+80 INPUT "Choose a function (1-5): "; C
+90 IF C = 5 THEN END
+100 INPUT "Enter a number: "; N
+110 ON C GOSUB 200, 300, 400, 500
+120 GOTO 20
+200 PRINT "Square root of"; N; "is"; SQR(N)
+210 RETURN
+300 PRINT "Sine of"; N; "is"; SIN(N)
+310 RETURN
+400 PRINT "Cosine of"; N; "is"; COS(N)
+410 RETURN
+500 PRINT "Tangent of"; N; "is"; TAN(N)
+510 RETURN
+```
+
+Key concepts:
+- Subroutines with GOSUB/RETURN
+- ON GOSUB branching
+- Mathematical functions
+- Menu-driven interface
+
+## Array Operations
+
+Demonstrates array handling, loops, and basic statistical calculations.
+
+```basic
+10 REM Array Operations
+20 DIM A(10)
+30 REM Fill array with numbers
+40 FOR I = 1 TO 10
+50 LET A(I) = I * 2
+60 NEXT I
+70 REM Calculate sum and average
+80 LET S = 0
+90 FOR I = 1 TO 10
+100 LET S = S + A(I)
+110 NEXT I
+120 PRINT "Sum:"; S
+130 PRINT "Average:"; S/10
+140 REM Find maximum value
+150 LET M = A(1)
+160 FOR I = 2 TO 10
+170 IF A(I) > M THEN LET M = A(I)
+180 NEXT I
+190 PRINT "Maximum value:"; M
+200 END
+```
+
+Key concepts:
+- Array declaration and initialization
+- Array traversal
+- Running sums
+- Finding maximum values
+- Basic statistics
+
+## Simple Data Management
+
+Shows how to work with DATA statements for storing and accessing program data.
+
+```basic
+10 REM Simple Data Management
+20 DIM N$(5), A(5)
+30 FOR I = 1 TO 5
+40 READ N$(I), A(I)
+50 NEXT I
+60 REM Print all records
+70 PRINT "Name", "Age"
+80 PRINT "----", "---"
+90 FOR I = 1 TO 5
+100 PRINT N$(I), A(I)
+110 NEXT I
+120 DATA "John", 25, "Mary", 32, "Bob", 45, "Alice", 28, "Tom", 19
+130 END
+```
+
+Key concepts:
+- DATA statements
+- READ operations
+- Parallel arrays
+- Formatted output
+- String and numeric arrays
+
+## Custom Function Definition
+
+Demonstrates how to create and use user-defined functions.
+
+```basic
+10 REM Custom Function Demo
+20 DEF FNC(X) = 5 * X^2 + 2 * X + 1
+30 DEF FNF(X) = (X * 9/5) + 32
+40 INPUT "Enter a number: "; N
+50 PRINT "Quadratic result:"; FNC(N)
+60 PRINT N; "Celsius ="; FNF(N); "Fahrenheit"
+70 END
+```
+
+Key concepts:
+- Function definition with DEF FN
+- Mathematical expressions
+- Temperature conversion
+- Function parameter passing
+
+Each of these examples can be extended or modified to create more complex programs. Note that some BASIC dialects may require slight modifications to these programs depending on the specific implementation.
+
+
+# Forth Language Glossary
+
+## Guide to Stack Diagrams
+
+* `R:` = return stack
+* `c` = 8-bit character
+* `flag` = boolean (0 or -1)
+* `n` = signed 16-bit
+* `u` = unsigned 16-bit
+* `d` = signed 32-bit
+* `ud` = unsigned 32-bit
+* `+n` = unsigned 15-bit
+* `x` = any cell value
+* `i*x j*x` = any number of cell values
+* `a-addr` = aligned address
+* `c-addr` = character address
+* `p-addr` = I/O port address
+* `sys` = system-specific
+
+*Refer to ANS Forth document for more details.*
+
+## Low-Level Words (Written in CODE)
+
+### ANS Forth Core Words
+
+These are required words whose definitions are specified by the ANS Forth document.
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `!` | `x a-addr --` | Store cell in memory |
+| `+` | `n1/u1 n2/u2 -- n3/u3` | Add n1+n2 |
+| `+!` | `n/u a-addr --` | Add cell to memory |
+| `-` | `n1/u1 n2/u2 -- n3/u3` | Subtract n1-n2 |
+| `<` | `n1 n2 -- flag` | Test n1<n2, signed |
+| `=` | `x1 x2 -- flag` | Test x1=x2 |
+| `>` | `n1 n2 -- flag` | Test n1>n2, signed |
+| `>R` | `x -- R: -- x` | Push to return stack |
+| `?DUP` | `x -- 0 \| x x` | DUP if nonzero |
+| `@` | `a-addr -- x` | Fetch cell from memory |
+| `0<` | `n -- flag` | True if TOS negative |
+| `0=` | `n/u -- flag` | Return true if TOS=0 |
+| `1+` | `n1/u1 -- n2/u2` | Add 1 to TOS |
+| `1-` | `n1/u1 -- n2/u2` | Subtract 1 from TOS |
+| `2*` | `x1 -- x2` | Arithmetic left shift |
+| `2/` | `x1 -- x2` | Arithmetic right shift |
+| `AND` | `x1 x2 -- x3` | Logical AND |
+| `CONSTANT` | `n --` | Define a Forth constant |
+| `C!` | `c c-addr --` | Store char in memory |
+| `C@` | `c-addr -- c` | Fetch char from memory |
+| `DROP` | `x --` | Drop top of stack |
+| `DUP` | `x -- x x` | Duplicate top of stack |
+| `EMIT` | `c --` | Output character to console |
+| `EXECUTE` | `i*x xt -- j*x` | Execute Forth word 'xt' |
+| `EXIT` | `--` | Exit a colon definition |
+| `FILL` | `c-addr u c --` | Fill memory with char |
+| `I` | `-- n R: sys1 sys2 -- sys1 sys2` | Get the innermost loop index |
+| `INVERT` | `x1 -- x2` | Bitwise inversion |
+| `J` | `-- n R: 4*sys -- 4*sys` | Get the second loop index |
+| `KEY` | `-- c` | Get character from keyboard |
+| `LSHIFT` | `x1 u -- x2` | Logical L shift u places |
+| `NEGATE` | `x1 -- x2` | Two's complement |
+| `OR` | `x1 x2 -- x3` | Logical OR |
+| `OVER` | `x1 x2 -- x1 x2 x1` | Per stack diagram |
+| `ROT` | `x1 x2 x3 -- x2 x3 x1` | Per stack diagram |
+| `RSHIFT` | `x1 u -- x2` | Logical R shift u places |
+| `R>` | `-- x R: x --` | Pop from return stack |
+| `R@` | `-- x R: x -- x` | Fetch from return stack |
+| `SWAP` | `x1 x2 -- x2 x1` | Swap top two items |
+| `UM*` | `u1 u2 -- ud` | Unsigned 16x16->32 mult. |
+| `UM/MOD` | `ud u1 -- u2 u3` | Unsigned 32/16->16 div. |
+| `UNLOOP` | `-- R: sys1 sys2 --` | Drop loop parameters |
+| `U<` | `u1 u2 -- flag` | Test u1<n2, unsigned |
+| `VARIABLE` | `--` | Define a Forth variable |
+| `XOR` | `x1 x2 -- x3` | Logical XOR |
+
+### ANS Forth Extensions
+
+Optional words specified by the ANS Forth document.
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `<>` | `x1 x2 -- flag` | Test not equal |
+| `BYE` | `i*x --` | Return to CP/M |
+| `CMOVE` | `c-addr1 c-addr2 u --` | Move from bottom |
+| `CMOVE>` | `c-addr1 c-addr2 u --` | Move from top |
+| `KEY?` | `-- flag` | Return true if char waiting |
+| `M+` | `d1 n -- d2` | Add single to double |
+| `NIP` | `x1 x2 -- x2` | Per stack diagram |
+| `TUCK` | `x1 x2 -- x2 x1 x2` | Per stack diagram |
+| `U>` | `u1 u2 -- flag` | Test u1>u2, unsigned |
+
+### Private Extensions
+
+Words unique to CamelForth.
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `(DO)` | `n1\|u1 n2\|u2 -- R: -- sys1 sys2` | Run-time code for DO |
+| `(LOOP)` | `R: sys1 sys2 -- \| sys1 sys2` | Run-time code for LOOP |
+| `(+LOOP)` | `n -- R: sys1 sys2 -- \| sys1 sys2` | Run-time code for +LOOP |
+| `><` | `x1 -- x2` | Swap bytes |
+| `?BRANCH` | `x --` | Branch if TOS zero |
+| `BDOS` | `DE C -- A` | Call CP/M BDOS |
+| `BRANCH` | `--` | Branch always |
+| `LIT` | `-- x` | Fetch inline literal to stack |
+| `RP!` | `a-addr --` | Set return stack pointer |
+| `RP@` | `-- a-addr` | Get return stack pointer |
+| `SCAN` | `c-addr1 u1 c -- c-addr2 u2` | Find matching char |
+| `SKIP` | `c-addr1 u1 c -- c-addr2 u2` | Skip matching chars |
+| `SP!` | `a-addr --` | Set data stack pointer |
+| `SP@` | `-- a-addr` | Get data stack pointer |
+| `S=` | `c-addr1 c-addr2 u -- n` | String compare (n<0: s1<s2, n=0: s1=s2, n>0: s1>s2) |
+| `USER` | `n --` | Define user variable 'n' |
+
+## High-Level Words
+
+### ANS Forth Core Words
+
+These are required words whose definitions are specified by the ANS Forth document.
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `#` | `ud1 -- ud2` | Convert 1 digit of output |
+| `#S` | `ud1 -- ud2` | Convert remaining digits |
+| `#>` | `ud1 -- c-addr u` | End conversion, get string |
+| `'` | `-- xt` | Find word in dictionary |
+| `(` | `--` | Skip input until ) |
+| `*` | `n1 n2 -- n3` | Signed multiply |
+| `*/` | `n1 n2 n3 -- n4` | n1*n2/n3 |
+| `*/MOD` | `n1 n2 n3 -- n4 n5` | n1*n2/n3, rem & quot |
+| `+LOOP` | `adrs -- L: 0 a1 a2 .. aN --` | |
+| `,` | `x --` | Append cell to dict |
+| `/` | `n1 n2 -- n3` | Signed divide |
+| `/MOD` | `n1 n2 -- n3 n4` | Signed divide, rem & quot |
+| `:` | `--` | Begin a colon definition |
+| `;` | | End a colon definition |
+| `<#` | `--` | Begin numeric conversion |
+| `>BODY` | `xt -- a-addr` | Address of param field |
+| `>IN` | `-- a-addr` | Holds offset into TIB |
+| `>NUMBER` | `ud adr u -- ud' adr' u'` | Convert string to number |
+| `2DROP` | `x1 x2 --` | Drop 2 cells |
+| `2DUP` | `x1 x2 -- x1 x2 x1 x2` | Dup top 2 cells |
+| `2OVER` | `x1 x2 x3 x4 -- x1 x2 x3 x4 x1 x2` | Per diagram |
+| `2SWAP` | `x1 x2 x3 x4 -- x3 x4 x1 x2` | Per diagram |
+| `2!` | `x1 x2 a-addr --` | Store 2 cells |
+| `2@` | `a-addr -- x1 x2` | Fetch 2 cells |
+| `ABORT` | `i*x -- R: j*x --` | Clear stack & QUIT |
+| `ABORT"` | `i*x 0 -- i*x R: j*x -- j*x` | Print msg & abort if x1<>0 |
+| `ABS` | `n1 -- +n2` | Absolute value |
+| `ACCEPT` | `c-addr +n -- +n'` | Get line from terminal |
+| `ALIGN` | `--` | Align HERE |
+| `ALIGNED` | `addr -- a-addr` | Align given addr |
+| `ALLOT` | `n --` | Allocate n bytes in dict |
+| `BASE` | `-- a-addr` | Holds conversion radix |
+| `BEGIN` | `-- adrs` | Target for backward branch |
+| `BL` | `-- char` | An ASCII space |
+| `C,` | `char --` | Append char to dict |
+| `CELLS` | `n1 -- n2` | Cells->adrs units |
+| `CELL+` | `a-addr1 -- a-addr2` | Add cell size to adrs |
+| `CHAR` | `-- char` | Parse ASCII character |
+| `CHARS` | `n1 -- n2` | Chars->adrs units |
+| `CHAR+` | `c-addr1 -- c-addr2` | Add char size to adrs |
+| `COUNT` | `c-addr1 -- c-addr2 u` | Counted->adr/len |
+| `CR` | `--` | Output newline |
+| `CREATE` | `--` | Create an empty definition |
+| `DECIMAL` | `--` | Set number base to decimal |
+| `DEPTH` | `-- +n` | Number of items on stack |
+| `DO` | `-- adrs L: -- 0` | Start of DO..LOOP |
+| `DOES>` | `--` | Change action of latest def'n |
+| `ELSE` | `adrs1 -- adrs2` | Branch for IF..ELSE |
+| `ENVIRONMENT?` | `c-addr u -- false` | System query |
+| `EVALUATE` | `i*x c-addr u -- j*x` | Interpret string |
+| `FIND` | `c-addr -- c-addr 0` | If name not found |
+| | `xt 1` | If immediate |
+| | `xt -1` | If "normal" |
+| `FM/MOD` | `d1 n1 -- n2 n3` | Floored signed division |
+| `HERE` | `-- addr` | Returns dictionary pointer |
+| `HOLD` | `char --` | Add char to output string |
+| `IF` | `-- adrs` | Conditional forward branch |
+| `IMMEDIATE` | `--` | Make last def'n immediate |
+| `LEAVE` | `-- L: -- adrs` | Exit DO..LOOP |
+| `LITERAL` | `x --` | Append numeric literal to dict |
+| `LOOP` | `adrs -- L: 0 a1 a2 .. aN --` | |
+| `MAX` | `n1 n2 -- n3` | Signed maximum |
+| `MIN` | `n1 n2 -- n3` | Signed minimum |
+| `MOD` | `n1 n2 -- n3` | Signed remainder |
+| `MOVE` | `addr1 addr2 u --` | Smart move |
+| `M*` | `n1 n2 -- d` | Signed 16*16->32 multiply |
+| `POSTPONE` | `--` | Postpone compile action of word |
+| `QUIT` | `-- R: i*x --` | Interpret from keyboard |
+| `RECURSE` | `--` | Recurse current definition |
+| `REPEAT` | `adrs1 adrs2 --` | Resolve WHILE loop |
+| `SIGN` | `n --` | Add minus sign if n<0 |
+| `SM/REM` | `d1 n1 -- n2 n3` | Symmetric signed division |
+| `SOURCE` | `-- adr n` | Current input buffer |
+| `SPACE` | `--` | Output a space |
+| `SPACES` | `n --` | Output n spaces |
+| `STATE` | `-- a-addr` | Holds compiler state |
+| `S"` | `--` | Compile in-line string |
+| `."` | `--` | Compile string to print |
+| `S>D` | `n -- d` | Single -> double precision |
+| `THEN` | `adrs --` | Resolve forward branch |
+| `TYPE` | `c-addr +n --` | Type line to terminal |
+| `UNTIL` | `adrs --` | Conditional backward branch |
+| `U.` | `u --` | Display u unsigned |
+| `.` | `n --` | Display n signed |
+| `WHILE` | `-- adrs` | Branch for WHILE loop |
+| `WORD` | `char -- c-addr n` | Parse word delim by char |
+| `[` | `--` | Enter interpretive state |
+| `[CHAR]` | `--` | Compile character literal |
+| `[']` | `--` | Find word & compile as literal |
+| `]` | `--` | Enter compiling state |
+
+### ANS Forth Extensions
+
+Optional words specified by the ANS Forth document.
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `.S` | `--` | Print stack contents |
+| `/STRING` | `a u n -- a+n u-n` | Trim string |
+| `AGAIN` | `adrs --` | Uncond'l backward branch |
+| `COMPILE,` | `xt --` | Append execution token |
+| `DABS` | `d1 -- +d2` | Absolute value, dbl.prec. |
+| `DNEGATE` | `d1 -- d2` | Negate, double precision |
+| `HEX` | `--` | Set number base to hex |
+| `PAD` | `-- a-addr` | User PAD buffer |
+| `TIB` | `-- a-addr` | Terminal Input Buffer |
+| `WITHIN` | `n1\|u1 n2\|u2 n3\|u3 -- f` | Test n2<=n1<n3? |
+| `WORDS` | `--` | List all words in dict. |
+
+### Private Extensions
+
+Words unique to CamelForth.
+
+| Word | Stack Effect | Description |
+|------|--------------|-------------|
+| `!CF` | `adrs cfa --` | Set code action of a word |
+| `!COLON` | `--` | Change code field to docolon |
+| `!DEST` | `dest adrs --` | Change a branch dest'n |
+| `#INIT` | `-- n` | #bytes of user area init data |
+| `'SOURCE` | `-- a-addr` | Two cells: len, adrs |
+| `(DOES>)` | `--` | Run-time action of DOES> |
+| `(S")` | `-- c-addr u` | Run-time code for S" |
+| `,BRANCH` | `xt --` | Append a branch instruction |
+| `,CF` | `adrs --` | Append a code field |
+| `,DEST` | `dest --` | Append a branch address |
+| `,EXIT` | `--` | Append hi-level EXIT action |
+| `>COUNTED` | `src n dst --` | Copy to counted str |
+| `>DIGIT` | `n -- c` | Convert to 0..9A..Z |
+| `>L` | `x -- L: -- x` | Move to Leave stack |
+| `?ABORT` | `f c-addr u --` | Abort & print msg |
+| `?DNEGATE` | `d1 n -- d2` | Negate d1 if n negative |
+| `?NEGATE` | `n1 n2 -- n3` | Negate n1 if n2 negative |
+| `?NUMBER` | `c-addr -- n -1` | Convert string->number |
+| | `-- c-addr 0` | If convert error |
+| `?SIGN` | `adr n -- adr' n' f` | Get optional sign |
+| `CELL` | `-- n` | Size of one cell |
+| `COLD` | `--` | Cold start Forth system |
+| `COMPILE` | `--` | Append inline execution token |
+| `DIGIT?` | `c -- n -1` | If c is a valid digit |
+| | `-- x 0` | Otherwise |
+| `DP` | `-- a-addr` | Holds dictionary ptr |
+| `ENDLOOP` | `adrs xt -- L: 0 a1 a2 .. aN --` | |
+| `HIDE` | `--` | "hide" latest definition |
+| `HP` | `-- a-addr` | HOLD pointer |
+| `IMMED?` | `nfa -- f` | Fetch immediate flag |
+| `INTERPRET` | `i*x c-addr u -- j*x` | Interpret given buffer |
+| `L0` | `-- a-addr` | Bottom of Leave stack |
+| `LATEST` | `-- a-addr` | Last word in dictionary |
+| `LP` | `-- a-addr` | Leave-stack pointer |
+| `L>` | `-- x L: x --` | Move from Leave stack |
+| `NFA>CFA` | `nfa -- cfa` | Name adr -> code field |
+| `NFA>LFA` | `nfa -- lfa` | Name adr -> link field |
+| `R0` | `-- a-addr` | End of return stack |
+| `REVEAL` | `--` | "reveal" latest definition |
+| `S0` | `-- a-addr` | End of parameter stack |
+| `TIBSIZE` | `-- n` | Size of TIB |
+| `U0` | `-- a-addr` | Current user area adrs |
+| `UD*` | `ud1 d2 -- ud3` | 32*16->32 multiply |
+| `UD/MOD` | `ud1 u2 -- u3 ud4` | 32/16->32 divide |
+| `UINIT` | `-- addr` | Initial values for user area |
+| `UMAX` | `u1 u2 -- u` | Unsigned maximum |
+| `UMIN` | `u1 u2 -- u` | Unsigned minimum |
+
+# Forth Programming Examples
+
+Here is the quintessential introduction to Forth, originating from the era of early 8-bit personal computers.
+
+https://www.forth.com/starting-forth/
+
+## 1. Basic Stack Manipulation
+
+```forth
+\ Example of basic stack operations
+5 3 2    \ Put three numbers on the stack
+.S       \ Print stack contents -- output: 5 3 2
+DUP      \ Duplicate top number
+.S       \ Stack now: 5 3 2 2
+SWAP     \ Swap top two numbers
+.S       \ Stack now: 5 3 2 2
+DROP     \ Remove top number
+.        \ Print top number
+CR       \ Carriage return (newline)
+```
+
+## 2. Simple Calculator
+
+```forth
+\ Definition for squaring a number
+: SQUARE ( n -- n^2 )
+    DUP *
+;
+
+\ Definition for cube
+: CUBE ( n -- n^3 )
+    DUP SQUARE *
+;
+
+\ Example usage
+5 SQUARE .  \ Outputs: 25
+3 CUBE .    \ Outputs: 27
+
+\ Basic arithmetic calculator
+: CALCULATE ( n1 n2 -- )
+    2DUP + ." Sum: " . CR
+    2DUP - ." Difference: " . CR
+    2DUP * ." Product: " . CR
+    SWAP DUP 0= IF 
+        DROP DROP ." Division by zero! " CR
+    ELSE
+        / ." Quotient: " . CR
+    THEN
+;
+
+10 5 CALCULATE
+```
+
+## 3. String Handling
+
+```forth
+\ Print a string
+: GREET ( -- )
+    ." Hello, Forth Programmer!" CR
+;
+
+\ Count characters in a string
+: COUNT-CHARS ( addr u -- n )
+    0 DO
+        1+
+    LOOP
+;
+
+\ Example of string comparison
+: SAME-STRING? ( addr1 u1 addr2 u2 -- flag )
+    ROT SWAP                \ Reorder parameters
+    S=                      \ Compare strings
+    0=                      \ Convert to boolean
+;
+```
+
+## 4. Simple Loop Examples
+
+```forth
+\ Print numbers from 1 to n
+: COUNT-TO ( n -- )
+    1+ 1 DO
+        I .
+        SPACE
+    LOOP
+    CR
+;
+
+\ Print a multiplication table
+: TIMES-TABLE ( n -- )
+    CR
+    ." Multiplication table for " DUP . CR
+    11 1 DO
+        DUP I * .
+        SPACE
+    LOOP
+    DROP
+    CR
+;
+
+\ Example usage:
+5 COUNT-TO      \ Prints: 1 2 3 4 5
+7 TIMES-TABLE   \ Prints multiplication table for 7
+```
+
+## 5. Memory Operations
+
+```forth
+\ Create a variable
+VARIABLE COUNT
+0 COUNT !      \ Initialize to 0
+
+\ Increment counter
+: INC-COUNT ( -- )
+    1 COUNT +!
+;
+
+\ Reset counter
+: RESET-COUNT ( -- )
+    0 COUNT !
+;
+
+\ Show counter
+: SHOW-COUNT ( -- )
+    ." Counter: "
+    COUNT @ .
+    CR
+;
+
+\ Example usage:
+SHOW-COUNT     \ Shows: Counter: 0
+INC-COUNT
+INC-COUNT
+SHOW-COUNT     \ Shows: Counter: 2
+RESET-COUNT
+SHOW-COUNT     \ Shows: Counter: 0
+```
+
+## 6. Simple Data Structure (Stack)
+
+```forth
+\ Implementation of a small stack (max 10 items)
+CREATE STACK 10 CELLS ALLOT
+VARIABLE STACK-PTR
+0 STACK-PTR !
+
+: STACK-PUSH ( n -- )
+    STACK-PTR @ 9 > IF
+        ." Stack overflow! " DROP
+    ELSE
+        STACK-PTR @ CELLS STACK + !
+        1 STACK-PTR +!
+    THEN
+;
+
+: STACK-POP ( -- n )
+    STACK-PTR @ 0= IF
+        ." Stack underflow! " 0
+    ELSE
+        -1 STACK-PTR +!
+        STACK-PTR @ CELLS STACK + @
+    THEN
+;
+
+\ Example usage:
+5 STACK-PUSH
+10 STACK-PUSH
+STACK-POP .    \ Outputs: 10
+STACK-POP .    \ Outputs: 5
+```
+
+## 7. Conditional Examples
+
+```forth
+\ Check if a number is positive, negative, or zero
+: CHECK-NUMBER ( n -- )
+    DUP 0= IF
+        ." Number is zero" CR DROP
+    ELSE
+        DUP 0< IF
+            ." Number is negative" CR DROP
+        ELSE
+            ." Number is positive" CR DROP
+        THEN
+    THEN
+;
+
+\ Example usage:
+5 CHECK-NUMBER    \ Outputs: Number is positive
+-3 CHECK-NUMBER   \ Outputs: Number is negative
+0 CHECK-NUMBER    \ Outputs: Number is zero
+```
+
+These examples demonstrate basic Forth programming concepts including:
+
+- Stack manipulation
+- Arithmetic operations
+- String handling
+- Loops and iteration
+- Memory operations
+- Simple data structures
+- Conditional statements
+
+Each example includes comments explaining the operations and expected output. Remember that Forth is a stack-based language, so understanding stack manipulation is crucial for writing effective programs.
